@@ -136,6 +136,8 @@ export type Database = {
       cancellations: {
         Row: {
           created_at: string
+          external_id: string | null
+          external_source: string | null
           id: string
           motivo: string | null
           ocorreu_em: string
@@ -145,6 +147,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          external_id?: string | null
+          external_source?: string | null
           id?: string
           motivo?: string | null
           ocorreu_em?: string
@@ -154,6 +158,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          external_id?: string | null
+          external_source?: string | null
           id?: string
           motivo?: string | null
           ocorreu_em?: string
@@ -374,6 +380,8 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          external_id: string | null
+          external_source: string | null
           fechado_em: string | null
           id: string
           metadata: Json | null
@@ -391,6 +399,8 @@ export type Database = {
         Insert: {
           created_at?: string
           email?: string | null
+          external_id?: string | null
+          external_source?: string | null
           fechado_em?: string | null
           id?: string
           metadata?: Json | null
@@ -408,6 +418,8 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string | null
+          external_id?: string | null
+          external_source?: string | null
           fechado_em?: string | null
           id?: string
           metadata?: Json | null
@@ -568,6 +580,8 @@ export type Database = {
       refunds: {
         Row: {
           created_at: string
+          external_id: string | null
+          external_source: string | null
           id: string
           motivo: string | null
           ocorreu_em: string
@@ -577,6 +591,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          external_id?: string | null
+          external_source?: string | null
           id?: string
           motivo?: string | null
           ocorreu_em?: string
@@ -586,6 +602,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          external_id?: string | null
+          external_source?: string | null
           id?: string
           motivo?: string | null
           ocorreu_em?: string
@@ -614,6 +632,7 @@ export type Database = {
         Row: {
           created_at: string
           external_id: string | null
+          external_source: string | null
           fonte: Database["public"]["Enums"]["sale_source"]
           id: string
           metadata: Json | null
@@ -627,6 +646,7 @@ export type Database = {
         Insert: {
           created_at?: string
           external_id?: string | null
+          external_source?: string | null
           fonte?: Database["public"]["Enums"]["sale_source"]
           id?: string
           metadata?: Json | null
@@ -640,6 +660,7 @@ export type Database = {
         Update: {
           created_at?: string
           external_id?: string | null
+          external_source?: string | null
           fonte?: Database["public"]["Enums"]["sale_source"]
           id?: string
           metadata?: Json | null
@@ -683,7 +704,34 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_daily_metrics: {
+        Row: {
+          cancelamentos_hoje: number | null
+          conversao_pct: number | null
+          leads_hoje: number | null
+          receita_hoje: number | null
+          reembolsos_hoje: number | null
+          vendas_hoje: number | null
+        }
+        Relationships: []
+      }
+      v_meta_mes: {
+        Row: {
+          meta_total: number | null
+          pct_meta: number | null
+          receita_mes: number | null
+        }
+        Relationships: []
+      }
+      v_top_performer_hoje: {
+        Row: {
+          nome: string | null
+          receita: number | null
+          ticket_medio: number | null
+          vendas: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
