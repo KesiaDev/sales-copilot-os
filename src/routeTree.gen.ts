@@ -24,6 +24,7 @@ import { Route as AuthenticatedDailyRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
 import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
+import { Route as ApiPublicWebhooksClintRouteImport } from './routes/api/public/webhooks/clint'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -101,6 +102,11 @@ const ApiPublicWebhooksHotmartRoute =
     path: '/api/public/webhooks/hotmart',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksClintRoute = ApiPublicWebhooksClintRouteImport.update({
+  id: '/api/public/webhooks/clint',
+  path: '/api/public/webhooks/clint',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/objecoes': typeof AuthenticatedObjecoesRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/ranking': typeof AuthenticatedRankingRoute
+  '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRoutesByTo {
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/objecoes': typeof AuthenticatedObjecoesRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/ranking': typeof AuthenticatedRankingRoute
+  '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRoutesById {
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/_authenticated/objecoes': typeof AuthenticatedObjecoesRoute
   '/_authenticated/previsao': typeof AuthenticatedPrevisaoRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
+  '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRouteTypes {
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/objecoes'
     | '/previsao'
     | '/ranking'
+    | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/objecoes'
     | '/previsao'
     | '/ranking'
+    | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
   id:
     | '__root__'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/_authenticated/objecoes'
     | '/_authenticated/previsao'
     | '/_authenticated/ranking'
+    | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
   fileRoutesById: FileRoutesById
 }
@@ -208,6 +220,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicWebhooksClintRoute: typeof ApiPublicWebhooksClintRoute
   ApiPublicWebhooksHotmartRoute: typeof ApiPublicWebhooksHotmartRoute
 }
 
@@ -318,6 +331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksHotmartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/clint': {
+      id: '/api/public/webhooks/clint'
+      path: '/api/public/webhooks/clint'
+      fullPath: '/api/public/webhooks/clint'
+      preLoaderRoute: typeof ApiPublicWebhooksClintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -356,6 +376,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicWebhooksClintRoute: ApiPublicWebhooksClintRoute,
   ApiPublicWebhooksHotmartRoute: ApiPublicWebhooksHotmartRoute,
 }
 export const routeTree = rootRouteImport
