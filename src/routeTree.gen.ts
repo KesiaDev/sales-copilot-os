@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedPrevisaoRouteImport } from './routes/_authenticated/previsao'
+import { Route as AuthenticatedObjecoesRouteImport } from './routes/_authenticated/objecoes'
 import { Route as AuthenticatedInteligenciaRouteImport } from './routes/_authenticated/inteligencia'
 import { Route as AuthenticatedFechamentoRouteImport } from './routes/_authenticated/fechamento'
 import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
@@ -43,6 +44,11 @@ const AuthenticatedRankingRoute = AuthenticatedRankingRouteImport.update({
 const AuthenticatedPrevisaoRoute = AuthenticatedPrevisaoRouteImport.update({
   id: '/previsao',
   path: '/previsao',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedObjecoesRoute = AuthenticatedObjecoesRouteImport.update({
+  id: '/objecoes',
+  path: '/objecoes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInteligenciaRoute =
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/equipe': typeof AuthenticatedEquipeRoute
   '/fechamento': typeof AuthenticatedFechamentoRoute
   '/inteligencia': typeof AuthenticatedInteligenciaRoute
+  '/objecoes': typeof AuthenticatedObjecoesRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/ranking': typeof AuthenticatedRankingRoute
 }
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/equipe': typeof AuthenticatedEquipeRoute
   '/fechamento': typeof AuthenticatedFechamentoRoute
   '/inteligencia': typeof AuthenticatedInteligenciaRoute
+  '/objecoes': typeof AuthenticatedObjecoesRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/ranking': typeof AuthenticatedRankingRoute
 }
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
   '/_authenticated/fechamento': typeof AuthenticatedFechamentoRoute
   '/_authenticated/inteligencia': typeof AuthenticatedInteligenciaRoute
+  '/_authenticated/objecoes': typeof AuthenticatedObjecoesRoute
   '/_authenticated/previsao': typeof AuthenticatedPrevisaoRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
 }
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/equipe'
     | '/fechamento'
     | '/inteligencia'
+    | '/objecoes'
     | '/previsao'
     | '/ranking'
   fileRoutesByTo: FileRoutesByTo
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/equipe'
     | '/fechamento'
     | '/inteligencia'
+    | '/objecoes'
     | '/previsao'
     | '/ranking'
   id:
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/_authenticated/equipe'
     | '/_authenticated/fechamento'
     | '/_authenticated/inteligencia'
+    | '/_authenticated/objecoes'
     | '/_authenticated/previsao'
     | '/_authenticated/ranking'
   fileRoutesById: FileRoutesById
@@ -196,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/previsao'
       fullPath: '/previsao'
       preLoaderRoute: typeof AuthenticatedPrevisaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/objecoes': {
+      id: '/_authenticated/objecoes'
+      path: '/objecoes'
+      fullPath: '/objecoes'
+      preLoaderRoute: typeof AuthenticatedObjecoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inteligencia': {
@@ -250,6 +269,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
   AuthenticatedFechamentoRoute: typeof AuthenticatedFechamentoRoute
   AuthenticatedInteligenciaRoute: typeof AuthenticatedInteligenciaRoute
+  AuthenticatedObjecoesRoute: typeof AuthenticatedObjecoesRoute
   AuthenticatedPrevisaoRoute: typeof AuthenticatedPrevisaoRoute
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
 }
@@ -261,6 +281,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,
   AuthenticatedFechamentoRoute: AuthenticatedFechamentoRoute,
   AuthenticatedInteligenciaRoute: AuthenticatedInteligenciaRoute,
+  AuthenticatedObjecoesRoute: AuthenticatedObjecoesRoute,
   AuthenticatedPrevisaoRoute: AuthenticatedPrevisaoRoute,
   AuthenticatedRankingRoute: AuthenticatedRankingRoute,
 }
