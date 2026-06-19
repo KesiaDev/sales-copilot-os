@@ -9,38 +9,237 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
+import { Route as AuthenticatedPrevisaoRouteImport } from './routes/_authenticated/previsao'
+import { Route as AuthenticatedObjecoesRouteImport } from './routes/_authenticated/objecoes'
+import { Route as AuthenticatedInteligenciaRouteImport } from './routes/_authenticated/inteligencia'
+import { Route as AuthenticatedFechamentoRouteImport } from './routes/_authenticated/fechamento'
+import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
+import { Route as AuthenticatedDiscRouteImport } from './routes/_authenticated/disc'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDailyRouteImport } from './routes/_authenticated/daily'
+import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
+import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
+import { Route as ApiPublicWebhooksClintRouteImport } from './routes/api/public/webhooks/clint'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRankingRoute = AuthenticatedRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPrevisaoRoute = AuthenticatedPrevisaoRouteImport.update({
+  id: '/previsao',
+  path: '/previsao',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedObjecoesRoute = AuthenticatedObjecoesRouteImport.update({
+  id: '/objecoes',
+  path: '/objecoes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInteligenciaRoute =
+  AuthenticatedInteligenciaRouteImport.update({
+    id: '/inteligencia',
+    path: '/inteligencia',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFechamentoRoute = AuthenticatedFechamentoRouteImport.update({
+  id: '/fechamento',
+  path: '/fechamento',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEquipeRoute = AuthenticatedEquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDiscRoute = AuthenticatedDiscRouteImport.update({
+  id: '/disc',
+  path: '/disc',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDailyRoute = AuthenticatedDailyRouteImport.update({
+  id: '/daily',
+  path: '/daily',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCopilotoRoute = AuthenticatedCopilotoRouteImport.update({
+  id: '/copiloto',
+  path: '/copiloto',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiPublicWebhooksHotmartRoute =
+  ApiPublicWebhooksHotmartRouteImport.update({
+    id: '/api/public/webhooks/hotmart',
+    path: '/api/public/webhooks/hotmart',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWebhooksClintRoute = ApiPublicWebhooksClintRouteImport.update({
+  id: '/api/public/webhooks/clint',
+  path: '/api/public/webhooks/clint',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/copiloto': typeof AuthenticatedCopilotoRoute
+  '/crm': typeof AuthenticatedCrmRoute
+  '/daily': typeof AuthenticatedDailyRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/disc': typeof AuthenticatedDiscRoute
+  '/equipe': typeof AuthenticatedEquipeRoute
+  '/fechamento': typeof AuthenticatedFechamentoRoute
+  '/inteligencia': typeof AuthenticatedInteligenciaRoute
+  '/objecoes': typeof AuthenticatedObjecoesRoute
+  '/previsao': typeof AuthenticatedPrevisaoRoute
+  '/ranking': typeof AuthenticatedRankingRoute
+  '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
+  '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/copiloto': typeof AuthenticatedCopilotoRoute
+  '/crm': typeof AuthenticatedCrmRoute
+  '/daily': typeof AuthenticatedDailyRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/disc': typeof AuthenticatedDiscRoute
+  '/equipe': typeof AuthenticatedEquipeRoute
+  '/fechamento': typeof AuthenticatedFechamentoRoute
+  '/inteligencia': typeof AuthenticatedInteligenciaRoute
+  '/objecoes': typeof AuthenticatedObjecoesRoute
+  '/previsao': typeof AuthenticatedPrevisaoRoute
+  '/ranking': typeof AuthenticatedRankingRoute
+  '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
+  '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/copiloto': typeof AuthenticatedCopilotoRoute
+  '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/_authenticated/daily': typeof AuthenticatedDailyRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/disc': typeof AuthenticatedDiscRoute
+  '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
+  '/_authenticated/fechamento': typeof AuthenticatedFechamentoRoute
+  '/_authenticated/inteligencia': typeof AuthenticatedInteligenciaRoute
+  '/_authenticated/objecoes': typeof AuthenticatedObjecoesRoute
+  '/_authenticated/previsao': typeof AuthenticatedPrevisaoRoute
+  '/_authenticated/ranking': typeof AuthenticatedRankingRoute
+  '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
+  '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/copiloto'
+    | '/crm'
+    | '/daily'
+    | '/dashboard'
+    | '/disc'
+    | '/equipe'
+    | '/fechamento'
+    | '/inteligencia'
+    | '/objecoes'
+    | '/previsao'
+    | '/ranking'
+    | '/api/public/webhooks/clint'
+    | '/api/public/webhooks/hotmart'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/copiloto'
+    | '/crm'
+    | '/daily'
+    | '/dashboard'
+    | '/disc'
+    | '/equipe'
+    | '/fechamento'
+    | '/inteligencia'
+    | '/objecoes'
+    | '/previsao'
+    | '/ranking'
+    | '/api/public/webhooks/clint'
+    | '/api/public/webhooks/hotmart'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/copiloto'
+    | '/_authenticated/crm'
+    | '/_authenticated/daily'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/disc'
+    | '/_authenticated/equipe'
+    | '/_authenticated/fechamento'
+    | '/_authenticated/inteligencia'
+    | '/_authenticated/objecoes'
+    | '/_authenticated/previsao'
+    | '/_authenticated/ranking'
+    | '/api/public/webhooks/clint'
+    | '/api/public/webhooks/hotmart'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  ApiPublicWebhooksClintRoute: typeof ApiPublicWebhooksClintRoute
+  ApiPublicWebhooksHotmartRoute: typeof ApiPublicWebhooksHotmartRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +247,138 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/ranking': {
+      id: '/_authenticated/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof AuthenticatedRankingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/previsao': {
+      id: '/_authenticated/previsao'
+      path: '/previsao'
+      fullPath: '/previsao'
+      preLoaderRoute: typeof AuthenticatedPrevisaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/objecoes': {
+      id: '/_authenticated/objecoes'
+      path: '/objecoes'
+      fullPath: '/objecoes'
+      preLoaderRoute: typeof AuthenticatedObjecoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inteligencia': {
+      id: '/_authenticated/inteligencia'
+      path: '/inteligencia'
+      fullPath: '/inteligencia'
+      preLoaderRoute: typeof AuthenticatedInteligenciaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fechamento': {
+      id: '/_authenticated/fechamento'
+      path: '/fechamento'
+      fullPath: '/fechamento'
+      preLoaderRoute: typeof AuthenticatedFechamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/equipe': {
+      id: '/_authenticated/equipe'
+      path: '/equipe'
+      fullPath: '/equipe'
+      preLoaderRoute: typeof AuthenticatedEquipeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/disc': {
+      id: '/_authenticated/disc'
+      path: '/disc'
+      fullPath: '/disc'
+      preLoaderRoute: typeof AuthenticatedDiscRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/daily': {
+      id: '/_authenticated/daily'
+      path: '/daily'
+      fullPath: '/daily'
+      preLoaderRoute: typeof AuthenticatedDailyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/crm': {
+      id: '/_authenticated/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof AuthenticatedCrmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/copiloto': {
+      id: '/_authenticated/copiloto'
+      path: '/copiloto'
+      fullPath: '/copiloto'
+      preLoaderRoute: typeof AuthenticatedCopilotoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/webhooks/hotmart': {
+      id: '/api/public/webhooks/hotmart'
+      path: '/api/public/webhooks/hotmart'
+      fullPath: '/api/public/webhooks/hotmart'
+      preLoaderRoute: typeof ApiPublicWebhooksHotmartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/clint': {
+      id: '/api/public/webhooks/clint'
+      path: '/api/public/webhooks/clint'
+      fullPath: '/api/public/webhooks/clint'
+      preLoaderRoute: typeof ApiPublicWebhooksClintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCopilotoRoute: typeof AuthenticatedCopilotoRoute
+  AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
+  AuthenticatedDailyRoute: typeof AuthenticatedDailyRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDiscRoute: typeof AuthenticatedDiscRoute
+  AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
+  AuthenticatedFechamentoRoute: typeof AuthenticatedFechamentoRoute
+  AuthenticatedInteligenciaRoute: typeof AuthenticatedInteligenciaRoute
+  AuthenticatedObjecoesRoute: typeof AuthenticatedObjecoesRoute
+  AuthenticatedPrevisaoRoute: typeof AuthenticatedPrevisaoRoute
+  AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCopilotoRoute: AuthenticatedCopilotoRoute,
+  AuthenticatedCrmRoute: AuthenticatedCrmRoute,
+  AuthenticatedDailyRoute: AuthenticatedDailyRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDiscRoute: AuthenticatedDiscRoute,
+  AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,
+  AuthenticatedFechamentoRoute: AuthenticatedFechamentoRoute,
+  AuthenticatedInteligenciaRoute: AuthenticatedInteligenciaRoute,
+  AuthenticatedObjecoesRoute: AuthenticatedObjecoesRoute,
+  AuthenticatedPrevisaoRoute: AuthenticatedPrevisaoRoute,
+  AuthenticatedRankingRoute: AuthenticatedRankingRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  ApiPublicWebhooksClintRoute: ApiPublicWebhooksClintRoute,
+  ApiPublicWebhooksHotmartRoute: ApiPublicWebhooksHotmartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
