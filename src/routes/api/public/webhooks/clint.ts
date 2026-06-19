@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { checkWebhookSecret } from "@/lib/webhook-auth";
 
 export const Route = createFileRoute("/api/public/webhooks/clint")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const unauthorized = checkWebhookSecret(request);
+        if (unauthorized) return unauthorized;
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const payload = await request.json() as any;

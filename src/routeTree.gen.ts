@@ -25,6 +25,7 @@ import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/cr
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
 import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
 import { Route as ApiPublicWebhooksClintRouteImport } from './routes/api/public/webhooks/clint'
+import { Route as ApiPublicMetricsDailyRouteImport } from './routes/api/public/metrics/daily'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -107,6 +108,11 @@ const ApiPublicWebhooksClintRoute = ApiPublicWebhooksClintRouteImport.update({
   path: '/api/public/webhooks/clint',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMetricsDailyRoute = ApiPublicMetricsDailyRouteImport.update({
+  id: '/api/public/metrics/daily',
+  path: '/api/public/metrics/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/objecoes': typeof AuthenticatedObjecoesRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/ranking': typeof AuthenticatedRankingRoute
+  '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/objecoes': typeof AuthenticatedObjecoesRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/ranking': typeof AuthenticatedRankingRoute
+  '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/_authenticated/objecoes': typeof AuthenticatedObjecoesRoute
   '/_authenticated/previsao': typeof AuthenticatedPrevisaoRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
+  '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/objecoes'
     | '/previsao'
     | '/ranking'
+    | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
   fileRoutesByTo: FileRoutesByTo
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/objecoes'
     | '/previsao'
     | '/ranking'
+    | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
   id:
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/_authenticated/objecoes'
     | '/_authenticated/previsao'
     | '/_authenticated/ranking'
+    | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
   fileRoutesById: FileRoutesById
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicMetricsDailyRoute: typeof ApiPublicMetricsDailyRoute
   ApiPublicWebhooksClintRoute: typeof ApiPublicWebhooksClintRoute
   ApiPublicWebhooksHotmartRoute: typeof ApiPublicWebhooksHotmartRoute
 }
@@ -338,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksClintRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/metrics/daily': {
+      id: '/api/public/metrics/daily'
+      path: '/api/public/metrics/daily'
+      fullPath: '/api/public/metrics/daily'
+      preLoaderRoute: typeof ApiPublicMetricsDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -376,6 +396,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicMetricsDailyRoute: ApiPublicMetricsDailyRoute,
   ApiPublicWebhooksClintRoute: ApiPublicWebhooksClintRoute,
   ApiPublicWebhooksHotmartRoute: ApiPublicWebhooksHotmartRoute,
 }
