@@ -1,3 +1,4 @@
+import brandLogo from "@/assets/brand-logo.jpeg.asset.json";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, ClipboardList, Trophy, Brain, Sparkles,
@@ -56,9 +57,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <Link to="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary shadow-glow">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src={brandLogo.url} alt="LLMídia" className="h-9 w-9 rounded-lg object-cover" />
           {!collapsed && (
             <div className="flex flex-col leading-tight">
               <span className="text-sm font-bold tracking-tight">LLMídia</span>
