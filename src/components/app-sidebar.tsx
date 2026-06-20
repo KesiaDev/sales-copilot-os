@@ -1,6 +1,7 @@
+import brandLogo from "@/assets/brand-logo.jpeg.asset.json";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Users, ClipboardList, Trophy, Brain, Sparkles,
+  LayoutDashboard, Users, ClipboardList, Trophy, Brain,
   FileText, TrendingUp, MessageSquareWarning, Database, Bot, LogOut,
 } from "lucide-react";
 import {
