@@ -8,6 +8,7 @@ import { listSales } from "@/lib/data.functions";
 import { getDashboardMetrics } from "@/lib/dashboard.functions";
 import { formatCurrency, formatNumber, formatPercent, shortDate } from "@/lib/format";
 import { Database, Webhook } from "lucide-react";
+import { HotmartCsvImport } from "@/components/hotmart-csv-import";
 
 export const Route = createFileRoute("/_authenticated/crm")({ component: CrmPage });
 
@@ -21,13 +22,16 @@ function CrmPage() {
     <>
       <Topbar title="CRM Performance" subtitle="Vendas, conversão e fontes (Hotmart + Clint)" />
       <main className="space-y-6 p-4 md:p-6">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <HotmartCsvImport />
+        </div>
         <Card className="border-info/30 bg-info/5">
           <CardContent className="flex flex-wrap items-center gap-3 p-4">
             <Webhook className="h-5 w-5 text-info" />
             <div className="flex-1 text-sm">
-              <p className="font-semibold">Integração via webhook</p>
+              <p className="font-semibold">Integração via webhook ou CSV</p>
               <p className="text-xs text-muted-foreground">
-                Configure os webhooks da Hotmart e Clint para o endpoint <code className="rounded bg-muted px-1.5 py-0.5">/api/public/webhooks/&lt;origem&gt;</code> e as vendas aparecerão aqui em tempo real.
+                Configure os webhooks da Hotmart e Clint para <code className="rounded bg-muted px-1.5 py-0.5">/api/public/webhooks/&lt;origem&gt;</code> ou importe o CSV de vendas da Hotmart manualmente pelo botão acima.
               </p>
             </div>
           </CardContent>
