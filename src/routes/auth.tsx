@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
+import brandLogo from "@/assets/brand-logo.jpeg.asset.json";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -62,8 +62,8 @@ function AuthPage() {
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,oklch(0.65_0.22_280/0.15),transparent_50%),radial-gradient(circle_at_80%_70%,oklch(0.78_0.14_215/0.12),transparent_50%)]" />
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow">
-            <Sparkles className="h-7 w-7 text-primary-foreground" />
+          <div className="mb-4 h-20 w-20 overflow-hidden rounded-2xl shadow-glow">
+            <img src={brandLogo.url} alt="LLMídia" className="h-full w-full object-cover" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">LLMídia Sales OS</h1>
           <p className="mt-1 text-sm text-muted-foreground">Plataforma de gestão comercial e pessoas</p>
