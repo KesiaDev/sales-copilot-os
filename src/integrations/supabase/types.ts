@@ -184,6 +184,47 @@ export type Database = {
           },
         ]
       }
+      coaching_actions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          ocorreu_em: string
+          profile_id: string
+          tipo: Database["public"]["Enums"]["coaching_action_type"]
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          ocorreu_em?: string
+          profile_id: string
+          tipo: Database["public"]["Enums"]["coaching_action_type"]
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          ocorreu_em?: string
+          profile_id?: string
+          tipo?: Database["public"]["Enums"]["coaching_action_type"]
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_actions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_insights: {
         Row: {
           acao_sugerida: string | null
@@ -746,6 +787,12 @@ export type Database = {
     Enums: {
       activity_type: "call" | "follow_up" | "proposta"
       app_role: "head" | "vendedor"
+      coaching_action_type:
+        | "cobranca"
+        | "parabens"
+        | "alinhamento_1x1"
+        | "feedback"
+        | "outro"
       lead_status:
         | "novo"
         | "qualificado"
@@ -883,6 +930,13 @@ export const Constants = {
     Enums: {
       activity_type: ["call", "follow_up", "proposta"],
       app_role: ["head", "vendedor"],
+      coaching_action_type: [
+        "cobranca",
+        "parabens",
+        "alinhamento_1x1",
+        "feedback",
+        "outro",
+      ],
       lead_status: ["novo", "qualificado", "em_negociacao", "ganho", "perdido"],
       priority_level: ["alta", "media", "reconhecimento"],
       sale_source: ["hotmart", "clint", "manual", "outro"],
