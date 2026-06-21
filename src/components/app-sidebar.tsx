@@ -2,8 +2,9 @@ import brandLogo from "@/assets/brand-logo.jpeg.asset.json";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, ClipboardList, Trophy, Brain, Sparkles,
-  FileText, TrendingUp, MessageSquareWarning, Database, Bot, LogOut,
+  FileText, TrendingUp, MessageSquareWarning, Database, Bot, LogOut, RefreshCw,
 } from "lucide-react";
+
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -34,7 +35,9 @@ const groups = [
       { title: "Fechamento Diário", url: "/fechamento", icon: ClipboardList },
       { title: "Ranking", url: "/ranking", icon: Trophy },
       { title: "CRM Performance", url: "/crm", icon: Database },
+      { title: "Renovações", url: "/renovacoes", icon: RefreshCw },
       { title: "Banco de Objeções", url: "/objecoes", icon: MessageSquareWarning },
+
     ],
   },
   {

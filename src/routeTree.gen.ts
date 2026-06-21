@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRenovacoesRouteImport } from './routes/_authenticated/renovacoes'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedPrevisaoRouteImport } from './routes/_authenticated/previsao'
 import { Route as AuthenticatedObjecoesRouteImport } from './routes/_authenticated/objecoes'
@@ -40,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRenovacoesRoute = AuthenticatedRenovacoesRouteImport.update({
+  id: '/renovacoes',
+  path: '/renovacoes',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRankingRoute = AuthenticatedRankingRouteImport.update({
   id: '/ranking',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/objecoes': typeof AuthenticatedObjecoesRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/ranking': typeof AuthenticatedRankingRoute
+  '/renovacoes': typeof AuthenticatedRenovacoesRoute
   '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/objecoes': typeof AuthenticatedObjecoesRoute
   '/previsao': typeof AuthenticatedPrevisaoRoute
   '/ranking': typeof AuthenticatedRankingRoute
+  '/renovacoes': typeof AuthenticatedRenovacoesRoute
   '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/_authenticated/objecoes': typeof AuthenticatedObjecoesRoute
   '/_authenticated/previsao': typeof AuthenticatedPrevisaoRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
+  '/_authenticated/renovacoes': typeof AuthenticatedRenovacoesRoute
   '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/objecoes'
     | '/previsao'
     | '/ranking'
+    | '/renovacoes'
     | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/objecoes'
     | '/previsao'
     | '/ranking'
+    | '/renovacoes'
     | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/_authenticated/objecoes'
     | '/_authenticated/previsao'
     | '/_authenticated/ranking'
+    | '/_authenticated/renovacoes'
     | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
@@ -259,6 +271,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/renovacoes': {
+      id: '/_authenticated/renovacoes'
+      path: '/renovacoes'
+      fullPath: '/renovacoes'
+      preLoaderRoute: typeof AuthenticatedRenovacoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ranking': {
       id: '/_authenticated/ranking'
@@ -373,6 +392,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedObjecoesRoute: typeof AuthenticatedObjecoesRoute
   AuthenticatedPrevisaoRoute: typeof AuthenticatedPrevisaoRoute
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
+  AuthenticatedRenovacoesRoute: typeof AuthenticatedRenovacoesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -387,6 +407,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedObjecoesRoute: AuthenticatedObjecoesRoute,
   AuthenticatedPrevisaoRoute: AuthenticatedPrevisaoRoute,
   AuthenticatedRankingRoute: AuthenticatedRankingRoute,
+  AuthenticatedRenovacoesRoute: AuthenticatedRenovacoesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
