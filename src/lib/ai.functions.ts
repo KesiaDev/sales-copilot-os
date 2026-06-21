@@ -33,7 +33,7 @@ async function callGemini(messages: any[], opts?: { model?: string; json?: boole
 // ===== DISC analysis from extracted text =====
 const discInput = z.object({
   profile_id: z.string().uuid(),
-  raw_text: z.string().min(20).max(20000),
+  raw_text: z.string().min(20).max(200000),
   arquivo_nome: z.string().optional(),
   arquivo_url: z.string().optional(),
 });
