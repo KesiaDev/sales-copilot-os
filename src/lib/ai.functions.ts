@@ -263,12 +263,13 @@ export const copilotChat = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     // Gather context
     const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
-    const [profilesR, salesR, reportsR, discR, insightsR] = await Promise.all([
+    const [profilesR, salesR, reportsR, discR, insightsR, actionsR] = await Promise.all([
       context.supabase.from("profiles").select("id, full_name, cargo, observacoes").eq("ativo", true),
       context.supabase.from("sales").select("profile_id, valor, vendido_em").gte("vendido_em", since),
       context.supabase.from("daily_reports").select("*").gte("data", since.slice(0, 10)),
       context.supabase.from("behavior_profiles").select("*, profile:profiles(full_name)"),
       context.supabase.from("daily_insights").select("*").order("data", { ascending: false }).limit(10),
+      context.supabase.from("coaching_actions").select("*, profile:profiles(full_name)").gte("ocorreu_em", since).order("ocorreu_em", { ascending: false }),
     ]);
 
     const ctx = {
@@ -277,6 +278,7 @@ export const copilotChat = createServerFn({ method: "POST" })
       fechamentos_30d: reportsR.data,
       perfis_disc: discR.data,
       insights_recentes: insightsR.data,
+      acoes_lideranca_30d: actionsR.data,
     };
 
     const system = `Você é o Copiloto de IA de Liderança Comercial da LLMídia. Responda em português, sempre prático e direto. Use os dados abaixo para responder, citando vendedores por nome quando relevante. Quando faltarem dados, diga claramente.
