@@ -12,6 +12,7 @@ import { listProfiles } from "@/lib/data.functions";
 import { analyzeDISC, listBehaviorProfiles } from "@/lib/ai.functions";
 import { Brain, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { CoachingActions } from "@/components/coaching-actions";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/disc")({ component: DiscPage });
@@ -81,6 +82,13 @@ function DiscPage() {
             <Button onClick={() => m.mutate()} disabled={m.isPending || !profileId || rawText.length < 20} className="w-full">
               <Sparkles className="mr-2 h-4 w-4" />{m.isPending ? "Analisando..." : "Analisar com IA"}
             </Button>
+            {(!profileId || rawText.length < 20) && (
+              <p className="text-xs text-amber-600">
+                {!profileId
+                  ? "Selecione um colaborador para continuar."
+                  : "Cole o conteúdo do relatório DISC no campo acima (mín. 20 caracteres). PDFs e imagens não são lidos automaticamente — abra o arquivo, copie o texto e cole aqui."}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -133,6 +141,7 @@ function DiscPage() {
                   <DiscSection title="Gatilhos motivacionais" content={b.gatilhos_motivacionais} />
                   <DiscSection title="Gatilhos de desmotivação" content={b.gatilhos_desmotivacao} />
                 </div>
+                {b.profile?.id && <CoachingActions profileId={b.profile.id} />}
               </CardContent>
             </Card>
           ))}
