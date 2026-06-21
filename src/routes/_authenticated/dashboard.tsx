@@ -1,14 +1,17 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, queryOptions } from "@tanstack/react-query";
 import { Topbar } from "@/components/topbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboardMetrics } from "@/lib/dashboard.functions";
-import { formatCurrency, formatNumber, formatPercent, shortDate } from "@/lib/format";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell } from "recharts";
+import { formatCurrency, formatPercent, shortDate } from "@/lib/format";
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
+  BarChart, Bar, Cell, Area, AreaChart, ReferenceLine,
+} from "recharts";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Target, Trophy, Receipt, RefreshCw, XCircle, Percent } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TrendingUp, TrendingDown, Target, Trophy, Receipt, RefreshCw, XCircle, Percent, Crown, AlertTriangle, PartyPopper, Award } from "lucide-react";
 
 const dashboardQuery = () => queryOptions({
   queryKey: ["dashboard"],
@@ -19,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-function Kpi({ icon: Icon, label, value, hint, accent }: any) {
+function Kpi({ icon: Icon, label, value, hint, hintClass, accent }: any) {
   return (
     <Card className="relative overflow-hidden border-border/60">
       <CardHeader className="pb-2">
@@ -32,7 +35,7 @@ function Kpi({ icon: Icon, label, value, hint, accent }: any) {
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold tracking-tight">{value}</div>
-        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+        {hint && <p className={`mt-1 text-xs ${hintClass ?? "text-muted-foreground"}`}>{hint}</p>}
       </CardContent>
     </Card>
   );
@@ -48,22 +51,104 @@ function DashboardPage() {
   );
   const k = data.kpis;
   const delta = k.receitaOntem ? ((k.receitaHoje - k.receitaOntem) / k.receitaOntem) * 100 : 0;
+  const now = new Date();
+  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const segundaMetade = now.getDate() > dim / 2;
+
+  // Banner contextual
+  let banner: { tone: "destructive" | "success" | "gold"; icon: any; text: string } | null = null;
+  if (k.percentMeta >= 100) {
+    banner = { tone: "gold", icon: Award, text: `🏆 Meta batida! Parabéns ao time! (${formatCurrency(k.receitaMes - k.meta)} acima)` };
+  } else if (k.percentMeta > 80) {
+    banner = { tone: "success", icon: PartyPopper, text: `🎉 Quase lá! Faltam apenas ${formatCurrency(k.restante)} para bater a meta` };
+  } else if (k.percentMeta < 30 && segundaMetade) {
+    banner = { tone: "destructive", icon: AlertTriangle, text: `⚠ Atenção: ritmo abaixo da meta — necessário ${formatCurrency(k.ritmoNecessario)}/dia útil` };
+  }
+
+  // Card meta dia
+  const noRitmo = k.receitaHoje >= k.ritmoNecessario;
+  const gapMeta = k.meta - k.receitaMes;
+  const metaHint = gapMeta > 0
+    ? { text: `Faltam ${formatCurrency(gapMeta)}`, cls: "text-destructive" }
+    : { text: `Superou em ${formatCurrency(-gapMeta)}`, cls: "text-success" };
+
+  // Hint receita hoje
+  let receitaHojeHint = `vs ontem ${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%`;
+  let receitaHojeHintClass: string | undefined;
+  if (k.receitaHoje === 0 && k.isWeekend) {
+    receitaHojeHint = "Sem vendas (fim de semana)";
+    receitaHojeHintClass = "text-muted-foreground italic";
+  }
 
   return (
     <>
       <Topbar title="Dashboard Executivo" subtitle="Visão completa do dia, semana e mês" />
       <main className="space-y-6 p-4 md:p-6">
+        {banner && (
+          <div className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${
+            banner.tone === "destructive" ? "border-destructive/40 bg-destructive/10 text-destructive" :
+            banner.tone === "success" ? "border-success/40 bg-success/10 text-success" :
+            "border-accent/50 bg-accent/15 text-accent"
+          }`}>
+            <banner.icon className="h-5 w-5 shrink-0" />
+            <p className="text-sm font-medium">{banner.text}</p>
+          </div>
+        )}
+
         {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Kpi icon={Receipt} label="Receita Hoje" value={formatCurrency(k.receitaHoje)} hint={`vs ontem ${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%`} accent="bg-primary/15 text-primary" />
+          <Kpi icon={Receipt} label="Receita Hoje" value={formatCurrency(k.receitaHoje)} hint={receitaHojeHint} hintClass={receitaHojeHintClass} accent="bg-primary/15 text-primary" />
           <Kpi icon={Receipt} label="Receita Ontem" value={formatCurrency(k.receitaOntem)} accent="bg-muted text-muted-foreground" />
           <Kpi icon={Target} label="Receita do Mês" value={formatCurrency(k.receitaMes)} hint={`Meta ${formatCurrency(k.meta)}`} accent="bg-info/15 text-info" />
-          <Kpi icon={Trophy} label="% da Meta" value={formatPercent(k.percentMeta)} accent="bg-accent/20 text-accent" />
-          <Kpi icon={Receipt} label="Ticket Médio" value={formatCurrency(k.ticketMedio)} />
+          <Kpi
+            icon={Trophy}
+            label="% da Meta"
+            value={formatPercent(k.percentMeta)}
+            hint={metaHint.text}
+            hintClass={metaHint.cls}
+            accent="bg-accent/20 text-accent"
+          />
+          <Kpi
+            icon={Receipt}
+            label="Ticket Médio"
+            value={formatCurrency(k.ticketMedio)}
+            hint={`${k.totalDeals} deals este mês`}
+          />
           <Kpi icon={Percent} label="Conversão" value={formatPercent(k.conversao)} />
           <Kpi icon={RefreshCw} label="Reembolsos" value={formatCurrency(k.reembolsos)} accent="bg-destructive/15 text-destructive" />
           <Kpi icon={XCircle} label="Cancelamentos" value={formatCurrency(k.cancelamentos)} accent="bg-destructive/15 text-destructive" />
         </div>
+
+        {/* Meta do dia */}
+        <Card className="border-border/60">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Meta do Dia</CardTitle>
+                <CardDescription>Para bater {formatCurrency(k.meta)} até fim do mês</CardDescription>
+              </div>
+              <Badge className={noRitmo ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
+                {noRitmo ? "✓ No ritmo" : "⚠ Abaixo do ritmo"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-border/60 bg-card/50 p-3">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Necessário hoje</div>
+                <div className="mt-1 text-xl font-bold tabular-nums text-warning">{formatCurrency(k.ritmoNecessario)}</div>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-card/50 p-3">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Realizado hoje</div>
+                <div className="mt-1 text-xl font-bold tabular-nums">{formatCurrency(k.receitaHoje)}</div>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-card/50 p-3">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Dias úteis restantes</div>
+                <div className="mt-1 text-xl font-bold tabular-nums">{k.diasUteisRestantes}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Goal Progress */}
         <Card>
@@ -88,16 +173,28 @@ function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Evolução diária (30d)</CardTitle>
+              <CardDescription>Linha tracejada laranja = ritmo necessário por dia útil</CardDescription>
             </CardHeader>
             <CardContent className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.evolucao}>
+                <AreaChart data={data.evolucao}>
+                  <defs>
+                    <linearGradient id="gradPrimary" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(258 90% 66%)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="hsl(258 90% 66%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="data" tickFormatter={(v) => shortDate(v)} stroke="var(--color-muted-foreground)" fontSize={11} />
                   <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} formatter={(v: any) => formatCurrency(Number(v))} labelFormatter={(v) => shortDate(v)} />
-                  <Line type="monotone" dataKey="valor" stroke="var(--color-primary)" strokeWidth={2} dot={false} />
-                </LineChart>
+                  <Tooltip
+                    contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }}
+                    formatter={(v: any, n: any) => [formatCurrency(Number(v)), n === "valor" ? "Receita" : "Ritmo necessário"]}
+                    labelFormatter={(v) => shortDate(v)}
+                  />
+                  <ReferenceLine y={k.ritmoNecessario} stroke="hsl(35 95% 55%)" strokeDasharray="6 4" strokeWidth={2} label={{ value: "Ritmo necessário", fill: "hsl(35 95% 55%)", fontSize: 10, position: "insideTopRight" }} />
+                  <Area type="monotone" dataKey="valor" stroke="hsl(258 90% 66%)" strokeWidth={2} fill="url(#gradPrimary)" fillOpacity={1} />
+                </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -112,13 +209,101 @@ function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
                   <YAxis type="category" dataKey="nome" stroke="var(--color-muted-foreground)" fontSize={11} width={90} />
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} formatter={(v: any) => formatCurrency(Number(v))} />
-                  <Bar dataKey="receita" fill="var(--color-primary)" radius={[0, 6, 6, 0]} />
+                  <Tooltip
+                    contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }}
+                    formatter={(v: any, _n: any, item: any) => {
+                      const p = item?.payload ?? {};
+                      return [
+                        `${formatCurrency(Number(v))} · ${p.vendas} deals · ticket ${formatCurrency(p.ticketMedio)}`,
+                        "Receita",
+                      ];
+                    }}
+                  />
+                  <Bar dataKey="receita" radius={[0, 6, 6, 0]}>
+                    {data.porVendedor.map((v: any, i: number) => (
+                      <Cell key={v.id} fill={i === 0 ? "hsl(45 95% 55%)" : "hsl(258 90% 66%)"} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
+
+        {/* Histórico Mensal */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Evolução Mensal</CardTitle>
+            <CardDescription>Últimos 6 meses</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.monthly}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="mes" stroke="var(--color-muted-foreground)" fontSize={11} />
+                  <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
+                  <Tooltip
+                    contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }}
+                    formatter={(v: any, _n: any, item: any) => {
+                      const p = item?.payload ?? {};
+                      return [
+                        `${formatCurrency(Number(v))} · ${p.deals} vendas · ticket ${formatCurrency(p.ticketMedio)}`,
+                        p.mes,
+                      ];
+                    }}
+                  />
+                  <ReferenceLine y={k.meta || 250000} stroke="hsl(35 95% 55%)" strokeDasharray="6 4" strokeWidth={2} label={{ value: "Meta", fill: "hsl(35 95% 55%)", fontSize: 10, position: "insideTopRight" }} />
+                  <Bar dataKey="receita" fill="hsl(258 90% 66%)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mês</TableHead>
+                  <TableHead className="text-right">Receita</TableHead>
+                  <TableHead className="text-right">Deals</TableHead>
+                  <TableHead className="text-right">Ticket Médio</TableHead>
+                  <TableHead className="text-right">vs Meta</TableHead>
+                  <TableHead className="text-right">vs Mês ant.</TableHead>
+                  <TableHead>Melhor vendedor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.monthly.map((m: any, i: number) => {
+                  const prev = data.monthly[i - 1];
+                  const variacao = prev && prev.receita ? ((m.receita - prev.receita) / prev.receita) * 100 : null;
+                  const pctMeta = m.meta ? (m.receita / m.meta) * 100 : 0;
+                  return (
+                    <TableRow key={m.key}>
+                      <TableCell className="font-medium">{m.mes}/{String(m.ano).slice(2)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(m.receita)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{m.deals}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(m.ticketMedio)}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={pctMeta >= 100 ? "default" : pctMeta >= 70 ? "secondary" : "destructive"}>
+                          {m.meta ? formatPercent(pctMeta) : "—"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {variacao === null ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1 text-xs font-semibold ${variacao >= 0 ? "text-success" : "text-destructive"}`}>
+                            {variacao >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                            {variacao >= 0 ? "+" : ""}{variacao.toFixed(1)}%
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">{m.melhorVendedor}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
         {/* Top performers */}
         <Card>
@@ -127,20 +312,36 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {data.porVendedor.slice(0, 5).map((v: any, i: number) => (
-                <div key={v.id} className="flex items-center justify-between rounded-lg border border-border/60 bg-card/50 px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${i === 0 ? "bg-accent/20 text-accent" : i === 1 ? "bg-muted text-foreground" : i === 2 ? "bg-accent/10 text-accent" : "bg-muted/50 text-muted-foreground"}`}>
-                      {i + 1}
+              {data.porVendedor.slice(0, 5).map((v: any, i: number) => {
+                const metaInd = k.meta && data.porVendedor.length ? k.meta / data.porVendedor.length : 0;
+                const pctInd = metaInd ? (v.receita / metaInd) * 100 : 0;
+                return (
+                  <div
+                    key={v.id}
+                    title={`${v.vendas} deals · ticket médio ${formatCurrency(v.ticketMedio)}`}
+                    className={`flex items-center justify-between rounded-lg border px-4 py-3 ${i === 0 ? "border-accent/60 bg-accent/10" : "border-border/60 bg-card/50"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${i === 0 ? "bg-accent text-accent-foreground" : i === 1 ? "bg-muted text-foreground" : i === 2 ? "bg-accent/20 text-accent" : "bg-muted/50 text-muted-foreground"}`}>
+                        {i === 0 ? <Crown className="h-4 w-4" /> : i + 1}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          {v.nome}
+                          {i === 0 && <Badge className="bg-accent/20 text-accent">👑 #1</Badge>}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{v.vendas} deals · ticket {formatCurrency(v.ticketMedio)} · conv. {formatPercent(v.conversao)}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm font-medium">{v.nome}</div>
-                      <div className="text-xs text-muted-foreground">{v.vendas} vendas · conv. {formatPercent(v.conversao)}</div>
+                    <div className="flex flex-col items-end">
+                      <div className="text-sm font-bold tabular-nums">{formatCurrency(v.receita)}</div>
+                      {metaInd > 0 && (
+                        <div className="text-xs text-muted-foreground">{formatPercent(pctInd)} da meta ind.</div>
+                      )}
                     </div>
                   </div>
-                  <div className="text-sm font-bold tabular-nums">{formatCurrency(v.receita)}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
