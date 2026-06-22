@@ -79,7 +79,7 @@ export const Route = createFileRoute("/api/public/webhooks/clint")({
                 .from("sales")
                 .select("id")
                 .eq("external_id", externalId)
-                .eq("external_source", externalSource)
+                .eq("external_source", externalSource ?? "clint")
                 .maybeSingle();
 
               if (existing?.id) {

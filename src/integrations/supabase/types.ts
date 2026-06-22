@@ -680,6 +680,7 @@ export type Database = {
           moeda: string
           pais: string | null
           produto: string
+          produto_grupo: string | null
           profile_id: string | null
           valor: number
           vendido_em: string
@@ -694,6 +695,7 @@ export type Database = {
           moeda?: string
           pais?: string | null
           produto: string
+          produto_grupo?: string | null
           profile_id?: string | null
           valor: number
           vendido_em?: string
@@ -708,6 +710,7 @@ export type Database = {
           moeda?: string
           pais?: string | null
           produto?: string
+          produto_grupo?: string | null
           profile_id?: string | null
           valor?: number
           vendido_em?: string
