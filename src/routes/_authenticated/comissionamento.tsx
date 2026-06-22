@@ -681,7 +681,7 @@ function RelatorioTab({ month }: { month: string }) {
     const [pr, rt, sl, mn, sp, bn, mg] = await Promise.all([
       db.from("profiles").select("id, full_name, ativo").eq("ativo", true).order("full_name"),
       db.from("commission_rates").select("*").lte("vigente_desde", startDate).order("vigente_desde", { ascending: false }),
-      db.from("sales").select("profile_id, produto_grupo, valor_eur, data_venda").gte("data_venda", startDate).lt("data_venda", endDate),
+      db.from("sales").select("profile_id, produto_grupo, valor, moeda, vendido_em").gte("vendido_em", startDate).lt("vendido_em", endDate),
       db.from("manual_revenue_entries").select("profile_id, produto_grupo, valor").eq("mes_referencia", month),
       db.from("roleta_spins").select("*").eq("mes_referencia", month),
       db.from("weekly_bonus_config").select("*").lte("vigente_desde", startDate).order("vigente_desde", { ascending: false }),
