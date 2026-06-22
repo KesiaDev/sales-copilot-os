@@ -24,7 +24,6 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDailyRouteImport } from './routes/_authenticated/daily'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
-import { Route as ApiPublicWebhooksMaintenanceRouteImport } from './routes/api/public/webhooks/maintenance'
 import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
 import { Route as ApiPublicWebhooksClintRouteImport } from './routes/api/public/webhooks/clint'
 import { Route as ApiPublicMetricsDailyRouteImport } from './routes/api/public/metrics/daily'
@@ -104,12 +103,6 @@ const AuthenticatedCopilotoRoute = AuthenticatedCopilotoRouteImport.update({
   path: '/copiloto',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiPublicWebhooksMaintenanceRoute =
-  ApiPublicWebhooksMaintenanceRouteImport.update({
-    id: '/api/public/webhooks/maintenance',
-    path: '/api/public/webhooks/maintenance',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicWebhooksHotmartRoute =
   ApiPublicWebhooksHotmartRouteImport.update({
     id: '/api/public/webhooks/hotmart',
@@ -145,7 +138,6 @@ export interface FileRoutesByFullPath {
   '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
-  '/api/public/webhooks/maintenance': typeof ApiPublicWebhooksMaintenanceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -165,7 +157,6 @@ export interface FileRoutesByTo {
   '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
-  '/api/public/webhooks/maintenance': typeof ApiPublicWebhooksMaintenanceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -187,7 +178,6 @@ export interface FileRoutesById {
   '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
-  '/api/public/webhooks/maintenance': typeof ApiPublicWebhooksMaintenanceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -209,7 +199,6 @@ export interface FileRouteTypes {
     | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
-    | '/api/public/webhooks/maintenance'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -229,7 +218,6 @@ export interface FileRouteTypes {
     | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
-    | '/api/public/webhooks/maintenance'
   id:
     | '__root__'
     | '/'
@@ -250,7 +238,6 @@ export interface FileRouteTypes {
     | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/hotmart'
-    | '/api/public/webhooks/maintenance'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -368,13 +355,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/copiloto'
       preLoaderRoute: typeof AuthenticatedCopilotoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/public/webhooks/maintenance': {
-      id: '/api/public/webhooks/maintenance'
-      path: '/api/public/webhooks/maintenance'
-      fullPath: '/api/public/webhooks/maintenance'
-      preLoaderRoute: typeof ApiPublicWebhooksMaintenanceRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/api/public/webhooks/hotmart': {
       id: '/api/public/webhooks/hotmart'
