@@ -63,6 +63,7 @@ export const Route = createFileRoute("/api/public/webhooks/clint")({
             const row = {
               profile_id: profileId,
               produto: data?.title ?? data?.product ?? data?.deal_name ?? "Clint Deal",
+              produto_grupo: data?.produto_grupo ?? null,
               valor: Number(data?.value ?? data?.amount ?? 0),
               moeda: data?.currency ?? "EUR",
               pais: data?.country,
