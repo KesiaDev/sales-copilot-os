@@ -255,6 +255,36 @@ export const Route = createFileRoute("/api/public/webhooks/maintenance")({
             return Response.json({ ok: true, page, totalPages, updated });
           }
 
+          if (action === "debug_relink_page") {
+            const CLINT_TOKEN = "U2FsdGVkX19qpxX7Y7vkyZMDSMx6PXQMCEWfKkEyJ7mgynG9278yllllxQtGVkvlt1aAh+0iDpps2sZHjAhdmA==";
+            const firstName = String(body?.firstName ?? "").trim().toLowerCase();
+            const page = Number(body?.page ?? 1);
+            const pageSize = Number(body?.pageSize ?? 200);
+
+            const clintResp = await fetch(
+              `https://api.clint.digital/v1/deals?status=WON&limit=${pageSize}&page=${page}`,
+              { headers: { "api-token": CLINT_TOKEN } }
+            );
+            const clintData = await clintResp.json() as any;
+            const deals = clintData?.data ?? [];
+
+            const matches = [];
+            for (const deal of deals) {
+              const sellerName = (deal.user?.full_name || "").trim();
+              const dealFirstName = sellerName.split(/\s+/)[0]?.toLowerCase() ?? "";
+              if (dealFirstName !== firstName) continue;
+              const externalId = String(deal.id);
+              const { data: existing, error } = await supabaseAdmin
+                .from("sales")
+                .select("id, profile_id, external_id, external_source")
+                .eq("external_id", externalId)
+                .eq("external_source", "clint");
+              matches.push({ dealId: deal.id, sellerName, foundInDb: existing, error: error?.message });
+              if (matches.length >= 3) break;
+            }
+            return Response.json({ ok: true, sample: matches });
+          }
+
           if (action === "diagnose_seller_names_page") {
             const CLINT_TOKEN = "U2FsdGVkX19qpxX7Y7vkyZMDSMx6PXQMCEWfKkEyJ7mgynG9278yllllxQtGVkvlt1aAh+0iDpps2sZHjAhdmA==";
             const page = Number(body?.page ?? 1);
