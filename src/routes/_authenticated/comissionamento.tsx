@@ -744,7 +744,7 @@ function RelatorioTab({ month }: { month: string }) {
         const byProduto = PRODUTOS.map((prod) => {
           const fatSales = sales
             .filter((s) => s.profile_id === p.id && s.produto_grupo === prod)
-            .reduce((sum, s) => sum + Number(s.valor_eur ?? 0), 0);
+            .reduce((sum, s) => sum + Number(s.valor ?? 0), 0);
           const fatMan = manuais
             .filter((s) => s.profile_id === p.id && s.produto_grupo === prod)
             .reduce((sum, s) => sum + Number(s.valor ?? 0), 0);
@@ -759,10 +759,10 @@ function RelatorioTab({ month }: { month: string }) {
           const total = sales
             .filter((s) => s.profile_id === p.id)
             .filter((s) => {
-              const d = new Date(s.data_venda);
+              const d = new Date(s.vendido_em);
               return d >= w.start && d <= w.end;
             })
-            .reduce((sum, s) => sum + Number(s.valor_eur ?? 0), 0);
+            .reduce((sum, s) => sum + Number(s.valor ?? 0), 0);
           const ok = bcfg ? total >= bcfg.meta : false;
           return { label: w.label, ok, valor: ok ? (bcfg?.valor ?? 0) : 0 };
         });
@@ -789,13 +789,13 @@ function RelatorioTab({ month }: { month: string }) {
   const salarioFixo = mgrCfg ? Number(mgrCfg.salario_fixo_brl) : 3200;
   const comissaoEquipe = sellers.reduce((s, x) => s + (x.comissaoTotal * pctEquipe / 100), 0);
   const nadalSales = nadal
-    ? sales.filter((s) => s.profile_id === nadal.id).reduce((s, x) => s + Number(x.valor_eur ?? 0), 0)
+    ? sales.filter((s) => s.profile_id === nadal.id).reduce((s, x) => s + Number(x.valor ?? 0), 0)
       + manuais.filter((s) => s.profile_id === nadal.id).reduce((s, x) => s + Number(x.valor ?? 0), 0)
     : 0;
   // assume Nadal commission on own sales uses commission_rates as well — average? we'll sum by product
   const nadalComissaoPropria = nadal
     ? PRODUTOS.reduce((sum, prod) => {
-        const fatS = sales.filter((s) => s.profile_id === nadal.id && s.produto_grupo === prod).reduce((a, b) => a + Number(b.valor_eur ?? 0), 0);
+        const fatS = sales.filter((s) => s.profile_id === nadal.id && s.produto_grupo === prod).reduce((a, b) => a + Number(b.valor ?? 0), 0);
         const fatM = manuais.filter((s) => s.profile_id === nadal.id && s.produto_grupo === prod).reduce((a, b) => a + Number(b.valor ?? 0), 0);
         return sum + (fatS + fatM) * rateFor(nadal.id, prod) / 100;
       }, 0)
