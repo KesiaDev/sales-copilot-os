@@ -37,6 +37,22 @@ export const Route = createFileRoute("/api/public/webhooks/maintenance")({
             return Response.json({ ok: true, deleted: toDelete.length, ids: toDelete.map((r: any) => r.id) });
           }
 
+          if (action === "cleanup_no_vendor_rows") {
+            const { count: before } = await supabaseAdmin
+              .from("sales")
+              .select("id", { count: "exact", head: true })
+              .is("profile_id", null);
+
+            const { error: delErr } = await supabaseAdmin
+              .from("sales")
+              .delete()
+              .is("profile_id", null);
+
+            if (delErr) throw delErr;
+
+            return Response.json({ ok: true, deleted: before ?? 0 });
+          }
+
           if (action === "verify_sales") {
             const { count: totalCount } = await supabaseAdmin
               .from("sales")
