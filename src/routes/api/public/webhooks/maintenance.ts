@@ -200,6 +200,39 @@ export const Route = createFileRoute("/api/public/webhooks/maintenance")({
             });
           }
 
+          if (action === "diagnose_seller_names_page") {
+            const CLINT_TOKEN = "U2FsdGVkX19qpxX7Y7vkyZMDSMx6PXQMCEWfKkEyJ7mgynG9278yllllxQtGVkvlt1aAh+0iDpps2sZHjAhdmA==";
+            const page = Number(body?.page ?? 1);
+            const pageSize = Number(body?.pageSize ?? 200);
+            const knownFirstNames = ["gisele", "rita", "joão", "joao", "fabio", "luana", "kesia"];
+
+            const clintResp = await fetch(
+              `https://api.clint.digital/v1/deals?status=WON&limit=${pageSize}&page=${page}`,
+              { headers: { "api-token": CLINT_TOKEN } }
+            );
+            const clintData = await clintResp.json() as any;
+            const deals = clintData?.data ?? [];
+            const totalPages = clintData?.totalPages ?? 1;
+
+            const unmatched: Record<string, number> = {};
+            for (const deal of deals) {
+              const sellerName = (deal.user?.full_name || "").trim();
+              const firstName = sellerName.split(/\s+/)[0]?.toLowerCase() ?? "";
+              if (!knownFirstNames.includes(firstName)) {
+                const key = sellerName || "(sem nome)";
+                unmatched[key] = (unmatched[key] ?? 0) + 1;
+              }
+            }
+            return Response.json({
+              ok: true,
+              page,
+              totalPages,
+              dealsInPage: deals.length,
+              unmatched_count: Object.values(unmatched).reduce((a, b) => a + b, 0),
+              por_nome: Object.entries(unmatched).sort((a, b) => b[1] - a[1]),
+            });
+          }
+
           return Response.json({ ok: false, error: "unknown action" }, { status: 400 });
         } catch (e: any) {
           console.error("maintenance webhook", e);
