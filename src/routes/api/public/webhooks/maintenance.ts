@@ -53,6 +53,21 @@ export const Route = createFileRoute("/api/public/webhooks/maintenance")({
             return Response.json({ ok: true, deleted: before ?? 0 });
           }
 
+          if (action === "cleanup_external_id_prefix") {
+            const prefix = String(body?.prefix ?? "teste-diagnostico");
+            const { data: rows, error: selErr } = await supabaseAdmin
+              .from("sales")
+              .select("id, external_id")
+              .like("external_id", `${prefix}%`);
+            if (selErr) throw selErr;
+
+            for (const r of rows ?? []) {
+              await supabaseAdmin.from("sales").delete().eq("id", r.id);
+            }
+
+            return Response.json({ ok: true, deleted: (rows ?? []).length });
+          }
+
           if (action === "list_profiles") {
             const { data: profiles, error } = await supabaseAdmin
               .from("profiles")
