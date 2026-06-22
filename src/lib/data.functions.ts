@@ -119,6 +119,51 @@ export const listSales = createServerFn({ method: "GET" })
     return data;
   });
 
+export const getVendasPorProduto = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const rows: { profile_id: string | null; produto_grupo: string | null; valor: number; profiles: { full_name: string } | null }[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data, error } = await context.supabase
+        .from("sales")
+        .select("profile_id, produto_grupo, valor, profiles(full_name)")
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      rows.push(...(data as any));
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+
+    const produtos = new Set<string>();
+    const porVendedor = new Map<string, { nome: string; produtos: Map<string, { vendas: number; valor: number }>; totalVendas: number; totalValor: number }>();
+
+    for (const r of rows) {
+      const nome = r.profiles?.full_name ?? "Sem vendedor";
+      const produto = r.produto_grupo ?? "Não classificado";
+      produtos.add(produto);
+
+      if (!porVendedor.has(nome)) {
+        porVendedor.set(nome, { nome, produtos: new Map(), totalVendas: 0, totalValor: 0 });
+      }
+      const vendedor = porVendedor.get(nome)!;
+      if (!vendedor.produtos.has(produto)) vendedor.produtos.set(produto, { vendas: 0, valor: 0 });
+      const cell = vendedor.produtos.get(produto)!;
+      cell.vendas += 1;
+      cell.valor += Number(r.valor) || 0;
+      vendedor.totalVendas += 1;
+      vendedor.totalValor += Number(r.valor) || 0;
+    }
+
+    const vendedores = [...porVendedor.values()]
+      .map((v) => ({ ...v, produtos: Object.fromEntries(v.produtos) }))
+      .sort((a, b) => b.totalValor - a.totalValor);
+
+    return { produtos: [...produtos].sort(), vendedores };
+  });
+
 // ============ GOALS ============
 const goalInput = z.object({
   profile_id: z.string().uuid().nullable(),

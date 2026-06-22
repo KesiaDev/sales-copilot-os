@@ -4,10 +4,10 @@ import { Topbar } from "@/components/topbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { listSales } from "@/lib/data.functions";
+import { listSales, getVendasPorProduto } from "@/lib/data.functions";
 import { getDashboardMetrics } from "@/lib/dashboard.functions";
 import { formatCurrency, formatNumber, formatPercent, shortDate } from "@/lib/format";
-import { Database, Webhook } from "lucide-react";
+import { Database, Webhook, Package } from "lucide-react";
 import { HotmartCsvImport } from "@/components/hotmart-csv-import";
 
 export const Route = createFileRoute("/_authenticated/crm")({ component: CrmPage });
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/crm")({ component: CrmPage
 function CrmPage() {
   const { data: sales } = useQuery({ queryKey: ["sales"], queryFn: () => listSales() });
   const { data: dash } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboardMetrics() });
+  const { data: porProduto } = useQuery({ queryKey: ["vendas-por-produto"], queryFn: () => getVendasPorProduto() });
 
   const fontes = (sales ?? []).reduce((acc: any, s: any) => { acc[s.fonte] = (acc[s.fonte] ?? 0) + Number(s.valor); return acc; }, {});
 
@@ -45,6 +46,44 @@ function CrmPage() {
             </Card>
           ))}
         </div>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2"><Package className="h-5 w-5 text-primary" /><CardTitle className="text-base">Vendas por vendedor × produto</CardTitle></div>
+            <CardDescription>
+              Produto identificado a partir do funil de origem na Clint. Accelerator é vendido como upsell dentro do funil de Mentoria Gestor de Tráfego e por isso ainda não aparece separado.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Vendedor</TableHead>
+                  {(porProduto?.produtos ?? []).map((p) => <TableHead key={p} className="text-right">{p}</TableHead>)}
+                  <TableHead className="text-right font-semibold">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(porProduto?.vendedores ?? []).map((v) => (
+                  <TableRow key={v.nome}>
+                    <TableCell className="text-xs font-medium">{v.nome}</TableCell>
+                    {(porProduto?.produtos ?? []).map((p) => {
+                      const cell = (v.produtos as any)[p];
+                      return (
+                        <TableCell key={p} className="text-right text-xs">
+                          {cell ? `${cell.vendas} · ${formatCurrency(cell.valor)}` : "—"}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-right text-xs font-semibold">
+                      {v.totalVendas} · {formatCurrency(v.totalValor)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader><div className="flex items-center gap-2"><Database className="h-5 w-5 text-primary" /><CardTitle className="text-base">Últimas vendas</CardTitle></div></CardHeader>
