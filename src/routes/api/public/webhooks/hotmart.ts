@@ -12,32 +12,32 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
           const payload = await request.json() as any;
 
           // Hotmart event shape: { event, data: { purchase: { transaction, price, status }, buyer, producer, ... } }
+          // NOTA: vendas aprovadas/completas NAO sao gravadas aqui. A Clint ja cria o deal WON
+          // automaticamente para vendas Hotmart, e o workflow n8n "02 - Clint: Sync Negocios
+          // Ganhos" sincroniza esse deal (com vendedor correto) para a tabela sales. Gravar aqui
+          // tambem duplicaria a venda (uma vez sem vendedor, outra com).
           const event = payload?.event ?? "UNKNOWN";
           const purchase = payload?.data?.purchase ?? payload?.data ?? {};
           const buyer = payload?.data?.buyer ?? {};
-          const product = payload?.data?.product ?? {};
+          const transaction = String(purchase?.transaction ?? "");
+          const buyerInfo = buyer?.email ? ` - ${buyer.email}` : "";
 
-          if (event === "PURCHASE_COMPLETE" || event === "PURCHASE_APPROVED") {
-            await supabaseAdmin.from("sales").insert({
-              produto: product?.name ?? "Hotmart Product",
-              valor: Number(purchase?.price?.value ?? purchase?.value ?? 0),
-              moeda: purchase?.price?.currency_value ?? "EUR",
-              pais: buyer?.address?.country ?? buyer?.country,
-              fonte: "hotmart",
-              external_id: String(purchase?.transaction ?? ""),
-              vendido_em: purchase?.order_date ? new Date(purchase.order_date).toISOString() : new Date().toISOString(),
-              metadata: payload,
-            });
-          } else if (event === "PURCHASE_REFUNDED") {
+          if (event === "PURCHASE_REFUNDED") {
             await supabaseAdmin.from("refunds").insert({
               valor: Number(purchase?.price?.value ?? 0),
-              motivo: "Hotmart refund",
+              motivo: `Hotmart refund - transacao ${transaction}${buyerInfo}`,
               ocorreu_em: new Date().toISOString(),
             });
           } else if (event === "PURCHASE_CANCELED") {
             await supabaseAdmin.from("cancellations").insert({
               valor: Number(purchase?.price?.value ?? 0),
-              motivo: "Hotmart cancellation",
+              motivo: `Hotmart cancellation - transacao ${transaction}${buyerInfo}`,
+              ocorreu_em: new Date().toISOString(),
+            });
+          } else if (event === "PURCHASE_CHARGEBACK" || event === "CHARGEBACK") {
+            await supabaseAdmin.from("refunds").insert({
+              valor: Number(purchase?.price?.value ?? 0),
+              motivo: `Hotmart chargeback - transacao ${transaction}${buyerInfo}`,
               ocorreu_em: new Date().toISOString(),
             });
           }
