@@ -2,7 +2,7 @@ import brandLogo from "@/assets/brand-logo.jpeg.asset.json";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, ClipboardList, Trophy, Brain, Sparkles,
-  FileText, TrendingUp, MessageSquareWarning, Database, Bot, LogOut, RefreshCw,
+  FileText, TrendingUp, MessageSquareWarning, Database, Bot, LogOut, RefreshCw, DollarSign,
 } from "lucide-react";
 
 import {
@@ -39,6 +39,10 @@ const groups = [
       { title: "Banco de Objeções", url: "/objecoes", icon: MessageSquareWarning },
 
     ],
+  },
+  {
+    label: "Financeiro",
+    items: [{ title: "Comissionamento", url: "/comissionamento", icon: DollarSign }],
   },
   {
     label: "Copiloto",

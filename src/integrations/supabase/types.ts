@@ -225,6 +225,41 @@ export type Database = {
           },
         ]
       }
+      commission_rates: {
+        Row: {
+          created_at: string
+          id: string
+          percentual: number
+          produto_grupo: string
+          profile_id: string
+          vigente_desde: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          percentual: number
+          produto_grupo: string
+          profile_id: string
+          vigente_desde?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          percentual?: number
+          produto_grupo?: string
+          profile_id?: string
+          vigente_desde?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_rates_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_insights: {
         Row: {
           acao_sugerida: string | null
@@ -485,6 +520,95 @@ export type Database = {
           },
         ]
       }
+      manager_commission_config: {
+        Row: {
+          created_at: string
+          id: string
+          manager_profile_id: string
+          percentual_sobre_equipe: number
+          salario_fixo_brl: number
+          vigente_desde: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manager_profile_id: string
+          percentual_sobre_equipe?: number
+          salario_fixo_brl?: number
+          vigente_desde?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manager_profile_id?: string
+          percentual_sobre_equipe?: number
+          salario_fixo_brl?: number
+          vigente_desde?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manager_commission_config_manager_profile_id_fkey"
+            columns: ["manager_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manual_revenue_entries: {
+        Row: {
+          created_at: string
+          data_venda: string
+          id: string
+          lancado_por: string | null
+          mes_referencia: string
+          moeda: string
+          motivo: string | null
+          produto_grupo: string
+          profile_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_venda: string
+          id?: string
+          lancado_por?: string | null
+          mes_referencia: string
+          moeda?: string
+          motivo?: string | null
+          produto_grupo: string
+          profile_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data_venda?: string
+          id?: string
+          lancado_por?: string | null
+          mes_referencia?: string
+          moeda?: string
+          motivo?: string | null
+          produto_grupo?: string
+          profile_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_revenue_entries_lancado_por_fkey"
+            columns: ["lancado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_revenue_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       objections: {
         Row: {
           created_at: string
@@ -669,6 +793,105 @@ export type Database = {
           },
         ]
       }
+      roleta_config: {
+        Row: {
+          elegivel: boolean
+          produto_grupo: string
+          updated_at: string
+        }
+        Insert: {
+          elegivel?: boolean
+          produto_grupo: string
+          updated_at?: string
+        }
+        Update: {
+          elegivel?: boolean
+          produto_grupo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      roleta_prizes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          peso: number
+          tipo: string
+          valor: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          peso?: number
+          tipo?: string
+          valor?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          peso?: number
+          tipo?: string
+          valor?: number | null
+        }
+        Relationships: []
+      }
+      roleta_spins: {
+        Row: {
+          created_at: string
+          id: string
+          mes_referencia: string
+          observacao: string | null
+          pago: boolean
+          premio_nome: string
+          premio_valor: number | null
+          prize_id: string | null
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mes_referencia: string
+          observacao?: string | null
+          pago?: boolean
+          premio_nome: string
+          premio_valor?: number | null
+          prize_id?: string | null
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mes_referencia?: string
+          observacao?: string | null
+          pago?: boolean
+          premio_nome?: string
+          premio_valor?: number | null
+          prize_id?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roleta_spins_prize_id_fkey"
+            columns: ["prize_id"]
+            isOneToOne: false
+            referencedRelation: "roleta_prizes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roleta_spins_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales: {
         Row: {
           created_at: string
@@ -745,6 +968,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      weekly_bonus_config: {
+        Row: {
+          created_at: string
+          id: string
+          meta_semanal_eur: number
+          moeda: string
+          profile_id: string
+          valor_bonus: number
+          vigente_desde: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meta_semanal_eur: number
+          moeda?: string
+          profile_id: string
+          valor_bonus?: number
+          vigente_desde?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meta_semanal_eur?: number
+          moeda?: string
+          profile_id?: string
+          valor_bonus?: number
+          vigente_desde?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_bonus_config_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -24,6 +24,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDailyRouteImport } from './routes/_authenticated/daily'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
+import { Route as AuthenticatedComissionamentoRouteImport } from './routes/_authenticated/comissionamento'
 import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
 import { Route as ApiPublicWebhooksClintRouteImport } from './routes/api/public/webhooks/clint'
 import { Route as ApiPublicMetricsDailyRouteImport } from './routes/api/public/metrics/daily'
@@ -103,6 +104,12 @@ const AuthenticatedCopilotoRoute = AuthenticatedCopilotoRouteImport.update({
   path: '/copiloto',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedComissionamentoRoute =
+  AuthenticatedComissionamentoRouteImport.update({
+    id: '/comissionamento',
+    path: '/comissionamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicWebhooksHotmartRoute =
   ApiPublicWebhooksHotmartRouteImport.update({
     id: '/api/public/webhooks/hotmart',
@@ -123,6 +130,7 @@ const ApiPublicMetricsDailyRoute = ApiPublicMetricsDailyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/comissionamento': typeof AuthenticatedComissionamentoRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/daily': typeof AuthenticatedDailyRoute
@@ -142,6 +150,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/comissionamento': typeof AuthenticatedComissionamentoRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/daily': typeof AuthenticatedDailyRoute
@@ -163,6 +172,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/comissionamento': typeof AuthenticatedComissionamentoRoute
   '/_authenticated/copiloto': typeof AuthenticatedCopilotoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/daily': typeof AuthenticatedDailyRoute
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/comissionamento'
     | '/copiloto'
     | '/crm'
     | '/daily'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/comissionamento'
     | '/copiloto'
     | '/crm'
     | '/daily'
@@ -223,6 +235,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/comissionamento'
     | '/_authenticated/copiloto'
     | '/_authenticated/crm'
     | '/_authenticated/daily'
@@ -356,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCopilotoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/comissionamento': {
+      id: '/_authenticated/comissionamento'
+      path: '/comissionamento'
+      fullPath: '/comissionamento'
+      preLoaderRoute: typeof AuthenticatedComissionamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/webhooks/hotmart': {
       id: '/api/public/webhooks/hotmart'
       path: '/api/public/webhooks/hotmart'
@@ -381,6 +401,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedComissionamentoRoute: typeof AuthenticatedComissionamentoRoute
   AuthenticatedCopilotoRoute: typeof AuthenticatedCopilotoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDailyRoute: typeof AuthenticatedDailyRoute
@@ -396,6 +417,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedComissionamentoRoute: AuthenticatedComissionamentoRoute,
   AuthenticatedCopilotoRoute: AuthenticatedCopilotoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDailyRoute: AuthenticatedDailyRoute,
