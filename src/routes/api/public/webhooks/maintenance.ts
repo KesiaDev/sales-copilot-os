@@ -168,10 +168,20 @@ export const Route = createFileRoute("/api/public/webhooks/maintenance")({
               .select("id", { count: "exact", head: true })
               .is("profile_id", null);
 
-            const { data: byProfile } = await supabaseAdmin
-              .from("sales")
-              .select("profile_id, valor, profiles(full_name)")
-              .not("profile_id", "is", null);
+            const byProfile: any[] = [];
+            let from = 0;
+            const pageSize = 1000;
+            while (true) {
+              const { data: page } = await supabaseAdmin
+                .from("sales")
+                .select("profile_id, valor, profiles(full_name)")
+                .not("profile_id", "is", null)
+                .range(from, from + pageSize - 1);
+              if (!page || page.length === 0) break;
+              byProfile.push(...page);
+              if (page.length < pageSize) break;
+              from += pageSize;
+            }
 
             const grouped: Record<string, { nome: string; count: number; total: number }> = {};
             for (const row of byProfile ?? []) {
