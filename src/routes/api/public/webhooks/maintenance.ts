@@ -85,8 +85,9 @@ export const Route = createFileRoute("/api/public/webhooks/maintenance")({
               return isNaN(n) ? 0 : n;
             }
 
+            const pageSize = Number(body?.pageSize ?? 25);
             const clintResp = await fetch(
-              `https://api.clint.digital/v1/deals?status=WON&limit=200&page=${page}`,
+              `https://api.clint.digital/v1/deals?status=WON&limit=${pageSize}&page=${page}`,
               { headers: { "api-token": CLINT_TOKEN } }
             );
             const clintData = await clintResp.json() as any;
