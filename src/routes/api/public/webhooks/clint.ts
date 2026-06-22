@@ -26,16 +26,65 @@ export const Route = createFileRoute("/api/public/webhooks/clint")({
               metadata: payload,
             });
           } else if (eventType.includes("deal") || eventType.includes("sale")) {
-            await supabaseAdmin.from("sales").insert({
-              produto: data?.product ?? data?.deal_name ?? "Clint Deal",
+            const externalId: string | null = data?.external_id ? String(data.external_id) : null;
+            const externalSource = externalId ? "clint" : null;
+
+            let profileId: string | null = null;
+            const sellerEmail = data?.user_email ? String(data.user_email).trim() : null;
+            const sellerName = data?.user_name ? String(data.user_name).trim() : null;
+            if (sellerEmail) {
+              const { data: byEmail } = await supabaseAdmin
+                .from("profiles")
+                .select("id")
+                .ilike("email", sellerEmail)
+                .maybeSingle();
+              profileId = byEmail?.id ?? null;
+            }
+            if (!profileId && sellerName) {
+              const { data: byName } = await supabaseAdmin
+                .from("profiles")
+                .select("id")
+                .ilike("full_name", sellerName)
+                .maybeSingle();
+              profileId = byName?.id ?? null;
+            }
+
+            const wonAt = data?.won_at && !isNaN(Date.parse(data.won_at))
+              ? new Date(data.won_at).toISOString()
+              : new Date().toISOString();
+
+            const validSources = ["hotmart", "clint", "manual", "outro"];
+            const fonte = validSources.includes(data?.source) ? data.source : "outro";
+
+            const row = {
+              profile_id: profileId,
+              produto: data?.title ?? data?.product ?? data?.deal_name ?? "Clint Deal",
               valor: Number(data?.value ?? data?.amount ?? 0),
               moeda: data?.currency ?? "EUR",
               pais: data?.country,
-              fonte: "clint",
-              external_id: String(data?.id ?? ""),
-              vendido_em: new Date().toISOString(),
+              fonte,
+              external_id: externalId,
+              external_source: externalSource,
+              vendido_em: wonAt,
               metadata: payload,
-            });
+            };
+
+            if (externalId) {
+              const { data: existing } = await supabaseAdmin
+                .from("sales")
+                .select("id")
+                .eq("external_id", externalId)
+                .eq("external_source", externalSource)
+                .maybeSingle();
+
+              if (existing?.id) {
+                await supabaseAdmin.from("sales").update(row).eq("id", existing.id);
+              } else {
+                await supabaseAdmin.from("sales").insert(row);
+              }
+            } else {
+              await supabaseAdmin.from("sales").insert(row);
+            }
           }
 
           return Response.json({ ok: true });
