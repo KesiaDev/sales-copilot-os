@@ -41,6 +41,10 @@ const groups = [
     ],
   },
   {
+    label: "Financeiro",
+    items: [{ title: "Comissionamento", url: "/comissionamento", icon: DollarSign }],
+  },
+  {
     label: "Copiloto",
     items: [{ title: "IA de Liderança", url: "/copiloto", icon: Bot }],
   },
