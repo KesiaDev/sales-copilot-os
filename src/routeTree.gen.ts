@@ -260,7 +260,6 @@ export interface RootRouteChildren {
   ApiPublicMetricsDailyRoute: typeof ApiPublicMetricsDailyRoute
   ApiPublicWebhooksClintRoute: typeof ApiPublicWebhooksClintRoute
   ApiPublicWebhooksHotmartRoute: typeof ApiPublicWebhooksHotmartRoute
-  ApiPublicWebhooksMaintenanceRoute: typeof ApiPublicWebhooksMaintenanceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -441,7 +440,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMetricsDailyRoute: ApiPublicMetricsDailyRoute,
   ApiPublicWebhooksClintRoute: ApiPublicWebhooksClintRoute,
   ApiPublicWebhooksHotmartRoute: ApiPublicWebhooksHotmartRoute,
-  ApiPublicWebhooksMaintenanceRoute: ApiPublicWebhooksMaintenanceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
