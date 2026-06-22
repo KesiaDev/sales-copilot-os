@@ -53,6 +53,14 @@ export const Route = createFileRoute("/api/public/webhooks/maintenance")({
             return Response.json({ ok: true, deleted: before ?? 0 });
           }
 
+          if (action === "list_profiles") {
+            const { data: profiles, error } = await supabaseAdmin
+              .from("profiles")
+              .select("id, full_name, email, ativo");
+            if (error) throw error;
+            return Response.json({ ok: true, profiles });
+          }
+
           if (action === "verify_sales") {
             const { count: totalCount } = await supabaseAdmin
               .from("sales")
