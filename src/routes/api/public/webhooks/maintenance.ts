@@ -200,6 +200,61 @@ export const Route = createFileRoute("/api/public/webhooks/maintenance")({
             });
           }
 
+          if (action === "create_inactive_profile") {
+            const fullName = String(body?.full_name ?? "").trim();
+            if (!fullName) return Response.json({ ok: false, error: "full_name obrigatorio" }, { status: 400 });
+
+            const { data: existing } = await supabaseAdmin
+              .from("profiles").select("id").ilike("full_name", fullName).limit(1);
+            if (existing?.[0]?.id) {
+              return Response.json({ ok: true, id: existing[0].id, created: false });
+            }
+
+            const id = crypto.randomUUID();
+            const { error } = await supabaseAdmin
+              .from("profiles")
+              .insert({ id, full_name: fullName, ativo: false });
+            if (error) throw error;
+            return Response.json({ ok: true, id, created: true });
+          }
+
+          if (action === "relink_no_vendor_by_name_page") {
+            const CLINT_TOKEN = "U2FsdGVkX19qpxX7Y7vkyZMDSMx6PXQMCEWfKkEyJ7mgynG9278yllllxQtGVkvlt1aAh+0iDpps2sZHjAhdmA==";
+            const firstName = String(body?.firstName ?? "").trim().toLowerCase();
+            const profileId = String(body?.profileId ?? "");
+            const page = Number(body?.page ?? 1);
+            const pageSize = Number(body?.pageSize ?? 200);
+            if (!firstName || !profileId) {
+              return Response.json({ ok: false, error: "firstName e profileId obrigatorios" }, { status: 400 });
+            }
+
+            const clintResp = await fetch(
+              `https://api.clint.digital/v1/deals?status=WON&limit=${pageSize}&page=${page}`,
+              { headers: { "api-token": CLINT_TOKEN } }
+            );
+            const clintData = await clintResp.json() as any;
+            const deals = clintData?.data ?? [];
+            const totalPages = clintData?.totalPages ?? 1;
+
+            let updated = 0;
+            for (const deal of deals) {
+              const sellerName = (deal.user?.full_name || "").trim();
+              const dealFirstName = sellerName.split(/\s+/)[0]?.toLowerCase() ?? "";
+              if (dealFirstName !== firstName) continue;
+              const externalId = String(deal.id);
+              const { error, count } = await supabaseAdmin
+                .from("sales")
+                .update({ profile_id: profileId })
+                .eq("external_id", externalId)
+                .eq("external_source", "clint")
+                .is("profile_id", null)
+                .select("id", { count: "exact" });
+              if (error) throw error;
+              updated += count ?? 0;
+            }
+            return Response.json({ ok: true, page, totalPages, updated });
+          }
+
           if (action === "diagnose_seller_names_page") {
             const CLINT_TOKEN = "U2FsdGVkX19qpxX7Y7vkyZMDSMx6PXQMCEWfKkEyJ7mgynG9278yllllxQtGVkvlt1aAh+0iDpps2sZHjAhdmA==";
             const page = Number(body?.page ?? 1);
