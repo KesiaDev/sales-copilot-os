@@ -68,6 +68,87 @@ export const Route = createFileRoute("/api/public/webhooks/maintenance")({
             return Response.json({ ok: true, deleted: (rows ?? []).length });
           }
 
+          if (action === "backfill_clint_page") {
+            const page = Number(body?.page ?? 1);
+            const CLINT_TOKEN = "U2FsdGVkX19qpxX7Y7vkyZMDSMx6PXQMCEWfKkEyJ7mgynG9278yllllxQtGVkvlt1aAh+0iDpps2sZHjAhdmA==";
+
+            function parseValue(raw: any): number {
+              if (typeof raw === "number") return raw;
+              if (typeof raw !== "string") return 0;
+              let cleaned = raw.replace(/[^\d.,-]/g, "");
+              if (cleaned.includes(",") && cleaned.includes(".")) {
+                cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+              } else if (cleaned.includes(",")) {
+                cleaned = cleaned.replace(",", ".");
+              }
+              const n = parseFloat(cleaned);
+              return isNaN(n) ? 0 : n;
+            }
+
+            const clintResp = await fetch(
+              `https://api.clint.digital/v1/deals?status=WON&limit=200&page=${page}`,
+              { headers: { "api-token": CLINT_TOKEN } }
+            );
+            const clintData = await clintResp.json() as any;
+            const deals = clintData?.data ?? [];
+            const totalPages = clintData?.totalPages ?? 1;
+
+            let processed = 0;
+            const errors: string[] = [];
+
+            for (const deal of deals) {
+              try {
+                const fields = deal.fields || {};
+                const title = fields.oferta || fields.produto || "Clint Deal";
+                const value = parseValue(deal.value);
+                const wonAt = deal.won_at || deal.updated_stage_at || deal.updated_at;
+                const sellerName = (deal.user?.full_name || "").trim() || null;
+                const sellerEmail = (deal.user?.email || "").trim() || null;
+                const externalId = String(deal.id);
+
+                let profileId: string | null = null;
+                if (sellerEmail) {
+                  const { data: byEmail } = await supabaseAdmin
+                    .from("profiles").select("id").ilike("email", sellerEmail).limit(1);
+                  profileId = byEmail?.[0]?.id ?? null;
+                }
+                if (!profileId && sellerName) {
+                  const firstName = sellerName.split(/\s+/)[0];
+                  const { data: byName } = await supabaseAdmin
+                    .from("profiles").select("id").ilike("full_name", `${firstName}%`).limit(1);
+                  profileId = byName?.[0]?.id ?? null;
+                }
+
+                const row = {
+                  profile_id: profileId,
+                  produto: title,
+                  valor: value,
+                  moeda: deal.currency || "EUR",
+                  pais: deal.contact?.ddi === "55" ? "BR" : "PT",
+                  fonte: "clint" as const,
+                  external_id: externalId,
+                  external_source: "clint",
+                  vendido_em: wonAt && !isNaN(Date.parse(wonAt)) ? new Date(wonAt).toISOString() : new Date().toISOString(),
+                  metadata: { type: "deal", data: { title, value, source: "clint", external_id: externalId } },
+                };
+
+                const { data: existing } = await supabaseAdmin
+                  .from("sales").select("id").eq("external_id", externalId).eq("external_source", "clint").maybeSingle();
+
+                if (existing?.id) {
+                  await supabaseAdmin.from("sales").update(row).eq("id", existing.id);
+                } else {
+                  await supabaseAdmin.from("sales").insert(row);
+                }
+                processed++;
+              } catch (e: any) {
+                errors.push(`${deal.id}: ${e.message}`);
+              }
+            }
+
+            return Response.json({ ok: true, page, totalPages, processed, errors });
+          }
+
           if (action === "list_profiles") {
             const { data: profiles, error } = await supabaseAdmin
               .from("profiles")
