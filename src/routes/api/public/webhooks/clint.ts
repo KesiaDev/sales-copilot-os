@@ -37,16 +37,20 @@ export const Route = createFileRoute("/api/public/webhooks/clint")({
                 .from("profiles")
                 .select("id")
                 .ilike("email", sellerEmail)
-                .maybeSingle();
-              profileId = byEmail?.id ?? null;
+                .limit(1);
+              profileId = byEmail?.[0]?.id ?? null;
             }
             if (!profileId && sellerName) {
+              // profiles.full_name no app costuma ser so o primeiro nome (ex: "Gisele"),
+              // enquanto a Clint manda o nome completo (ex: "Gisele Pimentel"). Casa pelo
+              // primeiro nome como prefixo para cobrir os dois casos.
+              const firstName = sellerName.split(/\s+/)[0];
               const { data: byName } = await supabaseAdmin
                 .from("profiles")
                 .select("id")
-                .ilike("full_name", sellerName)
-                .maybeSingle();
-              profileId = byName?.id ?? null;
+                .ilike("full_name", `${firstName}%`)
+                .limit(1);
+              profileId = byName?.[0]?.id ?? null;
             }
 
             const wonAt = data?.won_at && !isNaN(Date.parse(data.won_at))
