@@ -26,6 +26,18 @@ type VendedorRow = {
   taxa_conversao?: number | null;
 };
 
+type NumericField =
+  | "reunioes_agendadas"
+  | "reunioes_realizadas"
+  | "ligacoes"
+  | "emails"
+  | "tarefas"
+  | "whatsapp"
+  | "no_show"
+  | "negocios_total"
+  | "negocios_ganhos"
+  | "negocios_perdidos";
+
 // Recebe os charts dos dashboards "Produtividade por usuário" e "Funis Perpétuos
 // V3 - Liderança" já existentes na conta Clint (não criamos esses dashboards —
 // eles já tinham os dados de atividade, no-show e performance por vendedor).
@@ -60,28 +72,25 @@ export const Route = createFileRoute("/api/public/webhooks/clint-dashboards")({
           };
 
           const porVendedor = new Map<string, VendedorRow>();
+          // So zeramos no fim, e so os campos que algum chart desta chamada de fato
+          // tocou (touchedFields) -- nunca os 10 campos numericos de uma vez. Cada
+          // chamada do webhook traz so um subset dos dashboards (ex: so "Performance
+          // por Vendedor"); zerar um campo nao tocado nesta chamada sobrescreveria com
+          // 0, via upsert, o valor real gravado por uma chamada anterior do outro
+          // dashboard para o mesmo (user_name, capturado_em).
+          const touchedFields = new Set<NumericField>();
+          const setNum = (row: VendedorRow, field: NumericField, value: number) => {
+            row[field] = value;
+            touchedFields.add(field);
+          };
           const getRow = (userNameRaw: string): VendedorRow | null => {
             const userName = userNameRaw.trim();
             if (!userName) return null;
             if (!porVendedor.has(userName)) {
-              // Colunas numericas sao NOT NULL DEFAULT 0, mas o upsert em lote do
-              // PostgREST grava NULL explicito (em vez de usar o default) quando uma
-              // linha do batch nao tem a chave e outra linha tem — por isso toda
-              // linha precisa partir com os campos numericos zerados, nunca undefined.
               porVendedor.set(userName, {
                 user_name: userName,
                 capturado_em: capturadoEm,
                 profile_id: findProfileId(userName),
-                reunioes_agendadas: 0,
-                reunioes_realizadas: 0,
-                ligacoes: 0,
-                emails: 0,
-                tarefas: 0,
-                whatsapp: 0,
-                no_show: 0,
-                negocios_total: 0,
-                negocios_ganhos: 0,
-                negocios_perdidos: 0,
               });
             }
             return porVendedor.get(userName)!;
@@ -97,14 +106,20 @@ export const Route = createFileRoute("/api/public/webhooks/clint-dashboards")({
               for (const row of chart.result?.rows ?? []) {
                 const r = getRow(row.user_name ?? "");
                 if (!r) continue;
-                r.reunioes_agendadas = Number(
-                  row.track_activities_meeting_scheduled_activities ?? 0,
+                setNum(
+                  r,
+                  "reunioes_agendadas",
+                  Number(row.track_activities_meeting_scheduled_activities ?? 0),
                 );
-                r.reunioes_realizadas = Number(row.track_activities_meeting_activities ?? 0);
-                r.ligacoes = Number(row.track_activities_call_activities ?? 0);
-                r.emails = Number(row.track_activities_email_activities ?? 0);
-                r.tarefas = Number(row.track_activities_task_activities ?? 0);
-                r.whatsapp = Number(row.track_activities_whatsapp_activities ?? 0);
+                setNum(
+                  r,
+                  "reunioes_realizadas",
+                  Number(row.track_activities_meeting_activities ?? 0),
+                );
+                setNum(r, "ligacoes", Number(row.track_activities_call_activities ?? 0));
+                setNum(r, "emails", Number(row.track_activities_email_activities ?? 0));
+                setNum(r, "tarefas", Number(row.track_activities_task_activities ?? 0));
+                setNum(r, "whatsapp", Number(row.track_activities_whatsapp_activities ?? 0));
               }
             } else if (name === "No-show" && chart.type === "line") {
               for (const series of chart.result ?? []) {
@@ -114,15 +129,15 @@ export const Route = createFileRoute("/api/public/webhooks/clint-dashboards")({
                   (s: number, d: any) => s + Number(d.value ?? 0),
                   0,
                 );
-                r.no_show = total;
+                setNum(r, "no_show", total);
               }
             } else if (name === "Performance por Vendedor" && chart.type === "table") {
               for (const row of chart.result?.rows ?? []) {
                 const r = getRow(row.user_name ?? "");
                 if (!r) continue;
-                r.negocios_total = Number(row.deal_count ?? 0);
-                r.negocios_ganhos = Number(row.deal_count_won ?? 0);
-                r.negocios_perdidos = Number(row.deal_count_lost ?? 0);
+                setNum(r, "negocios_total", Number(row.deal_count ?? 0));
+                setNum(r, "negocios_ganhos", Number(row.deal_count_won ?? 0));
+                setNum(r, "negocios_perdidos", Number(row.deal_count_lost ?? 0));
                 r.taxa_conversao =
                   row.deal_conversion_rate != null ? Number(row.deal_conversion_rate) : null;
               }
@@ -148,6 +163,15 @@ export const Route = createFileRoute("/api/public/webhooks/clint-dashboards")({
           }
 
           if (porVendedor.size > 0) {
+            // Dentro do MESMO batch, se um vendedor tem o campo e outro nao, o
+            // PostgREST grava NULL explicito pro que falta (em vez do DEFAULT 0 da
+            // coluna) -- por isso zeramos aqui, mas so os campos que esta chamada
+            // realmente tocou em algum vendedor.
+            for (const row of porVendedor.values()) {
+              for (const field of touchedFields) {
+                if (row[field] === undefined) row[field] = 0;
+              }
+            }
             const { error } = await supabaseAdmin
               .from("clint_vendedor_metricas")
               .upsert([...porVendedor.values()], { onConflict: "user_name,capturado_em" });
