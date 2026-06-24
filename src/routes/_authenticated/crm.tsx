@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/topbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -13,22 +17,56 @@ import {
 } from "@/components/ui/table";
 import { listSales, getVendasPorProduto, getVendasMensaisPorProduto } from "@/lib/data.functions";
 import { getDashboardMetrics } from "@/lib/dashboard.functions";
-import { formatCurrency, formatNumber, formatPercent, shortDate, monthLabel } from "@/lib/format";
+import {
+  formatCurrency,
+  formatNumber,
+  formatPercent,
+  shortDate,
+  monthLabel,
+  todayISO,
+} from "@/lib/format";
 import { Database, Webhook, Package, CalendarRange } from "lucide-react";
 import { HotmartCsvImport } from "@/components/hotmart-csv-import";
 import { DuplicateSalesReview } from "@/components/duplicate-sales-review";
 
 export const Route = createFileRoute("/_authenticated/crm")({ component: CrmPage });
 
+function inicioDoAno() {
+  return `${new Date().getFullYear()}-01-01`;
+}
+
 function CrmPage() {
-  const { data: sales } = useQuery({ queryKey: ["sales"], queryFn: () => listSales() });
+  const [dataInicio, setDataInicio] = useState(inicioDoAno());
+  const [dataFim, setDataFim] = useState(todayISO());
+  const [mes, setMes] = useState("");
+
+  function aplicarMes(valor: string) {
+    setMes(valor);
+    if (!valor) return;
+    const [y, m] = valor.split("-").map(Number);
+    setDataInicio(`${valor}-01`);
+    setDataFim(new Date(y, m, 0).toISOString().slice(0, 10));
+  }
+
+  function aplicarPreset(inicio: string, fim: string) {
+    setMes("");
+    setDataInicio(inicio);
+    setDataFim(fim);
+  }
+
+  const periodo = useMemo(() => ({ dataInicio, dataFim }), [dataInicio, dataFim]);
+
+  const { data: sales } = useQuery({
+    queryKey: ["sales", periodo],
+    queryFn: () => listSales({ data: periodo }),
+  });
   const { data: dash } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboardMetrics(),
   });
   const { data: porProduto } = useQuery({
-    queryKey: ["vendas-por-produto"],
-    queryFn: () => getVendasPorProduto(),
+    queryKey: ["vendas-por-produto", periodo],
+    queryFn: () => getVendasPorProduto({ data: periodo }),
   });
   const { data: porProdutoMes } = useQuery({
     queryKey: ["vendas-mensais-por-produto"],
@@ -80,14 +118,67 @@ function CrmPage() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              <CardTitle className="text-base">Vendas por vendedor × produto</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base">Vendas por vendedor × produto</CardTitle>
+              </div>
+              <div className="flex flex-wrap items-end gap-2">
+                <div>
+                  <Label className="mb-1 block text-xs text-muted-foreground">De</Label>
+                  <Input
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => {
+                      setMes("");
+                      setDataInicio(e.target.value);
+                    }}
+                    className="h-8 w-[150px]"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1 block text-xs text-muted-foreground">Até</Label>
+                  <Input
+                    type="date"
+                    value={dataFim}
+                    onChange={(e) => {
+                      setMes("");
+                      setDataFim(e.target.value);
+                    }}
+                    className="h-8 w-[150px]"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1 block text-xs text-muted-foreground">Mês</Label>
+                  <Input
+                    type="month"
+                    value={mes}
+                    onChange={(e) => aplicarMes(e.target.value)}
+                    className="h-8 w-[140px]"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => aplicarPreset(inicioDoAno(), todayISO())}
+                >
+                  Este ano
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => aplicarPreset("2020-01-01", todayISO())}
+                >
+                  Tudo
+                </Button>
+              </div>
             </div>
             <CardDescription>
               Produto identificado a partir do funil de origem na Clint. Accelerator é vendido como
               upsell dentro do funil de Mentoria Gestor de Tráfego e por isso ainda não aparece
-              separado.
+              separado. Período: {shortDate(dataInicio)} a {shortDate(dataFim)}.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">

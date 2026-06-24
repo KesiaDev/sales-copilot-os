@@ -121,21 +121,31 @@ export const listObjections = createServerFn({ method: "GET" })
   });
 
 // ============ SALES ============
+const periodoInput = z.object({
+  dataInicio: z.string().optional().nullable(),
+  dataFim: z.string().optional().nullable(),
+});
+
 export const listSales = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+  .inputValidator((d: unknown) => periodoInput.parse(d ?? {}))
+  .handler(async ({ context, data: { dataInicio, dataFim } }) => {
+    let query = context.supabase
       .from("sales")
       .select("*, profile:profiles(full_name)")
-      .order("vendido_em", { ascending: false })
-      .limit(200);
+      .order("vendido_em", { ascending: false });
+    if (dataInicio) query = query.gte("vendido_em", dataInicio);
+    if (dataFim) query = query.lt("vendido_em", `${dataFim}T23:59:59.999`);
+    if (!dataInicio && !dataFim) query = query.limit(200);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   });
 
 export const getVendasPorProduto = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: unknown) => periodoInput.parse(d ?? {}))
+  .handler(async ({ context, data: { dataInicio, dataFim } }) => {
     const rows: {
       profile_id: string | null;
       produto_grupo: string | null;
@@ -145,10 +155,13 @@ export const getVendasPorProduto = createServerFn({ method: "GET" })
     let from = 0;
     const pageSize = 1000;
     while (true) {
-      const { data, error } = await context.supabase
+      let query = context.supabase
         .from("sales")
         .select("profile_id, produto_grupo, valor, profiles(full_name)")
         .range(from, from + pageSize - 1);
+      if (dataInicio) query = query.gte("vendido_em", dataInicio);
+      if (dataFim) query = query.lt("vendido_em", `${dataFim}T23:59:59.999`);
+      const { data, error } = await query;
       if (error) throw error;
       if (!data || data.length === 0) break;
       rows.push(...(data as any));
