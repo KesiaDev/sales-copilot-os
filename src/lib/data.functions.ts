@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchAllRows } from "@/lib/fetch-all-rows";
 import { z } from "zod";
 
 // ============ PROFILES ============
@@ -130,16 +131,31 @@ export const listSales = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => periodoInput.parse(d ?? {}))
   .handler(async ({ context, data: { dataInicio, dataFim } }) => {
-    let query = context.supabase
-      .from("sales")
-      .select("*, profile:profiles(full_name)")
-      .order("vendido_em", { ascending: false });
-    if (dataInicio) query = query.gte("vendido_em", dataInicio);
-    if (dataFim) query = query.lt("vendido_em", `${dataFim}T23:59:59.999`);
-    if (!dataInicio && !dataFim) query = query.limit(200);
-    const { data, error } = await query;
-    if (error) throw error;
-    return data;
+    if (!dataInicio && !dataFim) {
+      const { data, error } = await context.supabase
+        .from("sales")
+        .select("*, profile:profiles(full_name)")
+        .eq("possible_duplicate", false)
+        .order("vendido_em", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data;
+    }
+    // Periodos sem limite (ex: ano inteiro) podem passar de 1000 linhas, que e o
+    // teto padrao do Supabase/PostgREST — sem paginar aqui os cards de "Fontes"
+    // no CRM ficavam contando só uma fatia truncada das vendas do período.
+    const rows = await fetchAllRows<any>(({ from, to }) => {
+      let query = context.supabase
+        .from("sales")
+        .select("*, profile:profiles(full_name)")
+        .eq("possible_duplicate", false)
+        .order("vendido_em", { ascending: false })
+        .range(from, to);
+      if (dataInicio) query = query.gte("vendido_em", dataInicio);
+      if (dataFim) query = query.lt("vendido_em", `${dataFim}T23:59:59.999`);
+      return query as any;
+    });
+    return rows;
   });
 
 export const getVendasPorProduto = createServerFn({ method: "GET" })
@@ -158,6 +174,7 @@ export const getVendasPorProduto = createServerFn({ method: "GET" })
       let query = context.supabase
         .from("sales")
         .select("profile_id, produto_grupo, valor, profiles(full_name)")
+        .eq("possible_duplicate", false)
         .range(from, from + pageSize - 1);
       if (dataInicio) query = query.gte("vendido_em", dataInicio);
       if (dataFim) query = query.lt("vendido_em", `${dataFim}T23:59:59.999`);
@@ -214,6 +231,7 @@ export const getVendasMensaisPorProduto = createServerFn({ method: "GET" })
       const { data, error } = await context.supabase
         .from("sales")
         .select("produto_grupo, valor, vendido_em")
+        .eq("possible_duplicate", false)
         .range(from, from + pageSize - 1);
       if (error) throw error;
       if (!data || data.length === 0) break;

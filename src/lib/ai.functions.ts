@@ -23,7 +23,8 @@ async function callGemini(messages: any[], opts?: { model?: string; json?: boole
   if (!res.ok) {
     const t = await res.text();
     if (res.status === 429) throw new Error("Limite de uso da IA atingido. Aguarde um instante.");
-    if (res.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos ao workspace.");
+    if (res.status === 402)
+      throw new Error("Créditos de IA esgotados. Adicione créditos ao workspace.");
     throw new Error(`IA falhou (${res.status}): ${t.slice(0, 200)}`);
   }
   const j = await res.json();
@@ -69,27 +70,33 @@ Retorne SOMENTE o JSON, sem markdown.`;
 
     const text = await callGemini([{ role: "user", content: prompt }], { json: true });
     let parsed: any;
-    try { parsed = JSON.parse(text); }
-    catch { throw new Error("IA retornou formato inválido. Tente novamente."); }
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error("IA retornou formato inválido. Tente novamente.");
+    }
 
-    const { error } = await context.supabase.from("behavior_profiles").upsert({
-      profile_id: data.profile_id,
-      dominancia: parsed.dominancia ?? null,
-      influencia: parsed.influencia ?? null,
-      estabilidade: parsed.estabilidade ?? null,
-      conformidade: parsed.conformidade ?? null,
-      perfil_resumido: parsed.perfil_resumido,
-      pontos_fortes: parsed.pontos_fortes,
-      pontos_atencao: parsed.pontos_atencao,
-      como_liderar: parsed.como_liderar,
-      como_cobrar: parsed.como_cobrar,
-      como_reconhecer: parsed.como_reconhecer,
-      como_conduzir_feedback: parsed.como_conduzir_feedback,
-      gatilhos_motivacionais: parsed.gatilhos_motivacionais,
-      gatilhos_desmotivacao: parsed.gatilhos_desmotivacao,
-      arquivo_nome: data.arquivo_nome,
-      arquivo_url: data.arquivo_url,
-    }, { onConflict: "profile_id" });
+    const { error } = await context.supabase.from("behavior_profiles").upsert(
+      {
+        profile_id: data.profile_id,
+        dominancia: parsed.dominancia ?? null,
+        influencia: parsed.influencia ?? null,
+        estabilidade: parsed.estabilidade ?? null,
+        conformidade: parsed.conformidade ?? null,
+        perfil_resumido: parsed.perfil_resumido,
+        pontos_fortes: parsed.pontos_fortes,
+        pontos_atencao: parsed.pontos_atencao,
+        como_liderar: parsed.como_liderar,
+        como_cobrar: parsed.como_cobrar,
+        como_reconhecer: parsed.como_reconhecer,
+        como_conduzir_feedback: parsed.como_conduzir_feedback,
+        gatilhos_motivacionais: parsed.gatilhos_motivacionais,
+        gatilhos_desmotivacao: parsed.gatilhos_desmotivacao,
+        arquivo_nome: data.arquivo_nome,
+        arquivo_url: data.arquivo_url,
+      },
+      { onConflict: "profile_id" },
+    );
     if (error) throw error;
     return parsed;
   });
@@ -98,7 +105,8 @@ export const listBehaviorProfiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
-      .from("behavior_profiles").select("*, profile:profiles(id, full_name, cargo)");
+      .from("behavior_profiles")
+      .select("*, profile:profiles(id, full_name, cargo)");
     if (error) throw error;
     return data;
   });
@@ -110,7 +118,11 @@ export const generateIntelligence = createServerFn({ method: "POST" })
     const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
     const [profilesR, salesR, reportsR, leadsR] = await Promise.all([
       context.supabase.from("profiles").select("id, full_name, cargo").eq("ativo", true),
-      context.supabase.from("sales").select("profile_id, valor, vendido_em").gte("vendido_em", since),
+      context.supabase
+        .from("sales")
+        .select("profile_id, valor, vendido_em")
+        .eq("possible_duplicate", false)
+        .gte("vendido_em", since),
       context.supabase.from("daily_reports").select("*").gte("data", since.slice(0, 10)),
       context.supabase.from("leads").select("profile_id, status").gte("recebido_em", since),
     ]);
@@ -122,10 +134,23 @@ export const generateIntelligence = createServerFn({ method: "POST" })
       const leads = (leadsR.data ?? []).filter((l: any) => l.profile_id === p.id);
       const ganhos = leads.filter((l: any) => l.status === "ganho").length;
       const conversao = leads.length ? (ganhos / leads.length) * 100 : 0;
-      const callsAvg = reports.length ? reports.reduce((a, r: any) => a + r.calls_realizadas, 0) / reports.length : 0;
-      const followAvg = reports.length ? reports.reduce((a, r: any) => a + r.follow_ups, 0) / reports.length : 0;
+      const callsAvg = reports.length
+        ? reports.reduce((a, r: any) => a + r.calls_realizadas, 0) / reports.length
+        : 0;
+      const followAvg = reports.length
+        ? reports.reduce((a, r: any) => a + r.follow_ups, 0) / reports.length
+        : 0;
       const ajudaPedida = reports.filter((r: any) => r.precisa_ajuda).length;
-      return { nome: p.full_name, cargo: p.cargo, receita, conversao, callsAvg, followAvg, ajudaPedida, vendas: sales.length };
+      return {
+        nome: p.full_name,
+        cargo: p.cargo,
+        receita,
+        conversao,
+        callsAvg,
+        followAvg,
+        ajudaPedida,
+        vendas: sales.length,
+      };
     });
 
     const prompt = `Você é Copiloto de Head Comercial. Com base nos dados a seguir dos últimos 30 dias, identifique prioridades para amanhã.
@@ -142,7 +167,11 @@ Retorne SOMENTE o JSON.`;
 
     const text = await callGemini([{ role: "user", content: prompt }], { json: true });
     let parsed: any;
-    try { parsed = JSON.parse(text); } catch { throw new Error("IA retornou formato inválido."); }
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error("IA retornou formato inválido.");
+    }
 
     const today = new Date().toISOString().slice(0, 10);
     await context.supabase.from("daily_insights").delete().eq("data", today);
@@ -170,8 +199,10 @@ export const listInsights = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
-      .from("daily_insights").select("*, profile:profiles(full_name)")
-      .order("data", { ascending: false }).limit(50);
+      .from("daily_insights")
+      .select("*, profile:profiles(full_name)")
+      .order("data", { ascending: false })
+      .limit(50);
     if (error) throw error;
     return data;
   });
@@ -181,14 +212,35 @@ export const generateDailySummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const yesterday = new Date(Date.now() - 24 * 3600 * 1000);
-    const yStart = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()).toISOString();
-    const yEnd = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1).toISOString();
+    const yStart = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate(),
+    ).toISOString();
+    const yEnd = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate() + 1,
+    ).toISOString();
 
     const [salesR, leadsR, profilesR, goalsR] = await Promise.all([
-      context.supabase.from("sales").select("valor, profile_id").gte("vendido_em", yStart).lt("vendido_em", yEnd),
-      context.supabase.from("leads").select("status").gte("recebido_em", yStart).lt("recebido_em", yEnd),
+      context.supabase
+        .from("sales")
+        .select("valor, profile_id")
+        .eq("possible_duplicate", false)
+        .gte("vendido_em", yStart)
+        .lt("vendido_em", yEnd),
+      context.supabase
+        .from("leads")
+        .select("status")
+        .gte("recebido_em", yStart)
+        .lt("recebido_em", yEnd),
       context.supabase.from("profiles").select("id, full_name"),
-      context.supabase.from("goals").select("valor_meta").eq("mes", yesterday.getMonth() + 1).eq("ano", yesterday.getFullYear()),
+      context.supabase
+        .from("goals")
+        .select("valor_meta")
+        .eq("mes", yesterday.getMonth() + 1)
+        .eq("ano", yesterday.getFullYear()),
     ]);
 
     const receita = (salesR.data ?? []).reduce((a, s: any) => a + Number(s.valor), 0);
@@ -202,7 +254,9 @@ export const generateDailySummary = createServerFn({ method: "POST" })
 
     const profiles = profilesR.data ?? [];
     const byVend = new Map<string, number>();
-    (salesR.data ?? []).forEach((s: any) => byVend.set(s.profile_id, (byVend.get(s.profile_id) ?? 0) + Number(s.valor)));
+    (salesR.data ?? []).forEach((s: any) =>
+      byVend.set(s.profile_id, (byVend.get(s.profile_id) ?? 0) + Number(s.valor)),
+    );
     const top = [...byVend.entries()].sort((a, b) => b[1] - a[1])[0];
     const melhor = top ? (profiles.find((p: any) => p.id === top[0])?.full_name ?? "—") : "—";
 
@@ -219,11 +273,17 @@ Retorne JSON: { "resumo": string, "ponto_atencao": string, "plano_acao": string 
 
     const text = await callGemini([{ role: "user", content: prompt }], { json: true });
     let parsed: any = { resumo: text, ponto_atencao: "—", plano_acao: "—" };
-    try { parsed = JSON.parse(text); } catch {}
+    try {
+      parsed = JSON.parse(text);
+    } catch {}
 
     const today = new Date().toISOString().slice(0, 10);
     const row = {
-      data: today, receita, meta_diaria: metaDiaria, gap, conversao,
+      data: today,
+      receita,
+      meta_diaria: metaDiaria,
+      gap,
+      conversao,
       melhor_vendedor: melhor,
       ponto_atencao: parsed.ponto_atencao,
       plano_acao: parsed.plano_acao,
@@ -237,7 +297,11 @@ export const getLatestSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await context.supabase
-      .from("daily_summaries").select("*").order("data", { ascending: false }).limit(1).maybeSingle();
+      .from("daily_summaries")
+      .select("*")
+      .order("data", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     return data;
   });
 
@@ -247,7 +311,11 @@ export const suggestObjectionResponse = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ texto: z.string().min(3).max(500) }).parse(d))
   .handler(async ({ data }) => {
     const text = await callGemini([
-      { role: "system", content: "Você é coach de vendas. Dê respostas curtas (até 3 frases), persuasivas e éticas." },
+      {
+        role: "system",
+        content:
+          "Você é coach de vendas. Dê respostas curtas (até 3 frases), persuasivas e éticas.",
+      },
       { role: "user", content: `Sugira uma resposta para a objeção: "${data.texto}"` },
     ]);
     return { resposta: text.trim() };
@@ -255,7 +323,9 @@ export const suggestObjectionResponse = createServerFn({ method: "POST" })
 
 // ===== AI Leadership Copilot chat =====
 const chatInput = z.object({
-  messages: z.array(z.object({ role: z.enum(["user", "assistant", "system"]), content: z.string() })).max(40),
+  messages: z
+    .array(z.object({ role: z.enum(["user", "assistant", "system"]), content: z.string() }))
+    .max(40),
 });
 export const copilotChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -264,12 +334,27 @@ export const copilotChat = createServerFn({ method: "POST" })
     // Gather context
     const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
     const [profilesR, salesR, reportsR, discR, insightsR, actionsR] = await Promise.all([
-      context.supabase.from("profiles").select("id, full_name, cargo, observacoes").eq("ativo", true),
-      context.supabase.from("sales").select("profile_id, valor, vendido_em").gte("vendido_em", since),
+      context.supabase
+        .from("profiles")
+        .select("id, full_name, cargo, observacoes")
+        .eq("ativo", true),
+      context.supabase
+        .from("sales")
+        .select("profile_id, valor, vendido_em")
+        .eq("possible_duplicate", false)
+        .gte("vendido_em", since),
       context.supabase.from("daily_reports").select("*").gte("data", since.slice(0, 10)),
       context.supabase.from("behavior_profiles").select("*, profile:profiles(full_name)"),
-      context.supabase.from("daily_insights").select("*").order("data", { ascending: false }).limit(10),
-      context.supabase.from("coaching_actions").select("*, profile:profiles(full_name)").gte("ocorreu_em", since).order("ocorreu_em", { ascending: false }),
+      context.supabase
+        .from("daily_insights")
+        .select("*")
+        .order("data", { ascending: false })
+        .limit(10),
+      context.supabase
+        .from("coaching_actions")
+        .select("*, profile:profiles(full_name)")
+        .gte("ocorreu_em", since)
+        .order("ocorreu_em", { ascending: false }),
     ]);
 
     const ctx = {
@@ -286,9 +371,6 @@ export const copilotChat = createServerFn({ method: "POST" })
 DADOS:
 ${JSON.stringify(ctx).slice(0, 18000)}`;
 
-    const text = await callGemini([
-      { role: "system", content: system },
-      ...data.messages,
-    ]);
+    const text = await callGemini([{ role: "system", content: system }, ...data.messages]);
     return { content: text };
   });

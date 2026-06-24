@@ -71,6 +71,7 @@ export const getRenewalRadar = createServerFn({ method: "GET" })
         .from("sales")
         .select("id, valor, vendido_em, comprador_email, metadata, profile:profiles(full_name)")
         .eq("produto_grupo", cfg.produto_grupo)
+        .eq("possible_duplicate", false)
         .gte("vendido_em", vendidoDe.toISOString())
         .lte("vendido_em", vendidoAte.toISOString());
       if (vendasError) throw vendasError;
@@ -85,6 +86,7 @@ export const getRenewalRadar = createServerFn({ method: "GET" })
           .from("sales")
           .select("comprador_email, vendido_em")
           .eq("produto_grupo", cfg.renovacao_produto_grupo)
+          .eq("possible_duplicate", false)
           .in("comprador_email", emails);
         if (renovError) throw renovError;
         renovacoes = renovData ?? [];
@@ -143,6 +145,7 @@ export const getRenewalRadar = createServerFn({ method: "GET" })
       .from("sales")
       .select("valor")
       .in("produto_grupo", gruposRenovacao)
+      .eq("possible_duplicate", false)
       .gte("vendido_em", inicioMes.toISOString());
     if (renovadosMesError) throw renovadosMesError;
     const renovadosMes = {

@@ -906,6 +906,7 @@ function RelatorioTab({ month }: { month: string }) {
       db
         .from("sales")
         .select("profile_id, produto_grupo, valor, moeda, vendido_em")
+        .eq("possible_duplicate", false)
         .gte("vendido_em", startDate)
         .lt("vendido_em", endDate),
       db
@@ -956,7 +957,7 @@ function RelatorioTab({ month }: { month: string }) {
     const weeks: { start: Date; end: Date; label: string }[] = [];
     const start = new Date(y, m - 1, 1);
     const end = new Date(y, m, 0);
-    let cur = new Date(start);
+    const cur = new Date(start);
     let i = 1;
     while (cur <= end) {
       const ws = new Date(cur);
