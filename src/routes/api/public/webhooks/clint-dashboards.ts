@@ -64,10 +64,24 @@ export const Route = createFileRoute("/api/public/webhooks/clint-dashboards")({
             const userName = userNameRaw.trim();
             if (!userName) return null;
             if (!porVendedor.has(userName)) {
+              // Colunas numericas sao NOT NULL DEFAULT 0, mas o upsert em lote do
+              // PostgREST grava NULL explicito (em vez de usar o default) quando uma
+              // linha do batch nao tem a chave e outra linha tem — por isso toda
+              // linha precisa partir com os campos numericos zerados, nunca undefined.
               porVendedor.set(userName, {
                 user_name: userName,
                 capturado_em: capturadoEm,
                 profile_id: findProfileId(userName),
+                reunioes_agendadas: 0,
+                reunioes_realizadas: 0,
+                ligacoes: 0,
+                emails: 0,
+                tarefas: 0,
+                whatsapp: 0,
+                no_show: 0,
+                negocios_total: 0,
+                negocios_ganhos: 0,
+                negocios_perdidos: 0,
               });
             }
             return porVendedor.get(userName)!;
