@@ -184,6 +184,98 @@ export type Database = {
           },
         ]
       }
+      clint_funil_snapshots: {
+        Row: {
+          capturado_em: string
+          created_at: string
+          dados: Json
+          id: string
+          tipo: string
+        }
+        Insert: {
+          capturado_em?: string
+          created_at?: string
+          dados: Json
+          id?: string
+          tipo: string
+        }
+        Update: {
+          capturado_em?: string
+          created_at?: string
+          dados?: Json
+          id?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      clint_vendedor_metricas: {
+        Row: {
+          capturado_em: string
+          created_at: string
+          emails: number
+          id: string
+          ligacoes: number
+          metadata: Json | null
+          negocios_ganhos: number
+          negocios_perdidos: number
+          negocios_total: number
+          no_show: number
+          profile_id: string | null
+          reunioes_agendadas: number
+          reunioes_realizadas: number
+          tarefas: number
+          taxa_conversao: number | null
+          user_name: string
+          whatsapp: number
+        }
+        Insert: {
+          capturado_em?: string
+          created_at?: string
+          emails?: number
+          id?: string
+          ligacoes?: number
+          metadata?: Json | null
+          negocios_ganhos?: number
+          negocios_perdidos?: number
+          negocios_total?: number
+          no_show?: number
+          profile_id?: string | null
+          reunioes_agendadas?: number
+          reunioes_realizadas?: number
+          tarefas?: number
+          taxa_conversao?: number | null
+          user_name: string
+          whatsapp?: number
+        }
+        Update: {
+          capturado_em?: string
+          created_at?: string
+          emails?: number
+          id?: string
+          ligacoes?: number
+          metadata?: Json | null
+          negocios_ganhos?: number
+          negocios_perdidos?: number
+          negocios_total?: number
+          no_show?: number
+          profile_id?: string | null
+          reunioes_agendadas?: number
+          reunioes_realizadas?: number
+          tarefas?: number
+          taxa_conversao?: number | null
+          user_name?: string
+          whatsapp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clint_vendedor_metricas_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_actions: {
         Row: {
           created_at: string
@@ -957,7 +1049,11 @@ export type Database = {
       }
       sales: {
         Row: {
+          comprador_email: string | null
+          comprador_telefone: string | null
           created_at: string
+          duplicate_of: string | null
+          duplicate_reason: string | null
           external_id: string | null
           external_source: string | null
           fonte: Database["public"]["Enums"]["sale_source"]
@@ -965,6 +1061,7 @@ export type Database = {
           metadata: Json | null
           moeda: string
           pais: string | null
+          possible_duplicate: boolean
           produto: string
           produto_grupo: string | null
           profile_id: string | null
@@ -972,7 +1069,11 @@ export type Database = {
           vendido_em: string
         }
         Insert: {
+          comprador_email?: string | null
+          comprador_telefone?: string | null
           created_at?: string
+          duplicate_of?: string | null
+          duplicate_reason?: string | null
           external_id?: string | null
           external_source?: string | null
           fonte?: Database["public"]["Enums"]["sale_source"]
@@ -980,6 +1081,7 @@ export type Database = {
           metadata?: Json | null
           moeda?: string
           pais?: string | null
+          possible_duplicate?: boolean
           produto: string
           produto_grupo?: string | null
           profile_id?: string | null
@@ -987,7 +1089,11 @@ export type Database = {
           vendido_em?: string
         }
         Update: {
+          comprador_email?: string | null
+          comprador_telefone?: string | null
           created_at?: string
+          duplicate_of?: string | null
+          duplicate_reason?: string | null
           external_id?: string | null
           external_source?: string | null
           fonte?: Database["public"]["Enums"]["sale_source"]
@@ -995,6 +1101,7 @@ export type Database = {
           metadata?: Json | null
           moeda?: string
           pais?: string | null
+          possible_duplicate?: boolean
           produto?: string
           produto_grupo?: string | null
           profile_id?: string | null
@@ -1002,6 +1109,13 @@ export type Database = {
           vendido_em?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sales_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sales_profile_id_fkey"
             columns: ["profile_id"]
