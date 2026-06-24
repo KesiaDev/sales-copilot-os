@@ -793,6 +793,69 @@ export type Database = {
           },
         ]
       }
+      renewal_settings: {
+        Row: {
+          duracao_dias: number
+          produto_grupo: string
+          renovacao_produto_grupo: string
+          updated_at: string
+        }
+        Insert: {
+          duracao_dias?: number
+          produto_grupo: string
+          renovacao_produto_grupo?: string
+          updated_at?: string
+        }
+        Update: {
+          duracao_dias?: number
+          produto_grupo?: string
+          renovacao_produto_grupo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      renewal_status: {
+        Row: {
+          id: string
+          sale_id: string
+          status: string
+          ultimo_contato_em: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          sale_id: string
+          status?: string
+          ultimo_contato_em?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          sale_id?: string
+          status?: string
+          ultimo_contato_em?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_status_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: true
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "renewal_status_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roleta_config: {
         Row: {
           elegivel: boolean
