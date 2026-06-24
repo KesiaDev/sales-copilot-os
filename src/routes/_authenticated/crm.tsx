@@ -82,6 +82,14 @@ function CrmPage() {
     return acc;
   }, {});
 
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const produtosOrdenados = [...(porProdutoMes?.produtos ?? [])].sort((a, b) => {
+    const aCatchAll = a.produto === "Outros" || a.produto === "Não classificado";
+    const bCatchAll = b.produto === "Outros" || b.produto === "Não classificado";
+    if (aCatchAll !== bCatchAll) return aCatchAll ? 1 : -1;
+    return b.totalValor - a.totalValor;
+  });
+
   return (
     <>
       <Topbar
@@ -236,9 +244,12 @@ function CrmPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="sticky left-0 bg-card">Produto</TableHead>
+                  <TableHead className="sticky left-0 z-10 bg-card">Produto</TableHead>
                   {(porProdutoMes?.meses ?? []).map((m) => (
-                    <TableHead key={m} className="text-right whitespace-nowrap">
+                    <TableHead
+                      key={m}
+                      className={`text-right whitespace-nowrap ${m === mesAtual ? "text-primary" : ""}`}
+                    >
                       {monthLabel(m)}
                     </TableHead>
                   ))}
@@ -246,24 +257,82 @@ function CrmPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(porProdutoMes?.produtos ?? []).map((p) => (
-                  <TableRow key={p.produto}>
-                    <TableCell className="sticky left-0 bg-card text-xs font-medium">
-                      {p.produto}
-                    </TableCell>
-                    {(porProdutoMes?.meses ?? []).map((m) => {
-                      const cell = (p.meses as any)[m];
-                      return (
-                        <TableCell key={m} className="text-right text-xs whitespace-nowrap">
-                          {cell ? `${cell.vendas} · ${fmt(cell.valor)}` : "—"}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="text-right text-xs font-semibold whitespace-nowrap">
-                      {p.totalVendas} · {fmt(p.totalValor)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {produtosOrdenados.map((p) => {
+                  const isCatchAll = p.produto === "Outros" || p.produto === "Não classificado";
+                  const maxCelula = Math.max(
+                    1,
+                    ...(porProdutoMes?.meses ?? []).map((m) => (p.meses as any)[m]?.valor ?? 0),
+                  );
+                  return (
+                    <TableRow key={p.produto}>
+                      <TableCell
+                        className={`sticky left-0 z-10 bg-card text-xs font-medium ${
+                          isCatchAll ? "text-muted-foreground italic" : ""
+                        }`}
+                      >
+                        {p.produto}
+                      </TableCell>
+                      {(porProdutoMes?.meses ?? []).map((m) => {
+                        const cell = (p.meses as any)[m];
+                        const intensity = cell
+                          ? Math.min(0.22, (cell.valor / maxCelula) * 0.22)
+                          : 0;
+                        return (
+                          <TableCell
+                            key={m}
+                            className={`text-right whitespace-nowrap ${
+                              m === mesAtual ? "bg-primary/5" : ""
+                            }`}
+                            style={
+                              cell
+                                ? { backgroundColor: `hsl(var(--primary) / ${intensity})` }
+                                : undefined
+                            }
+                          >
+                            {cell ? (
+                              <div>
+                                <div className="text-xs font-medium">{fmt(cell.valor)}</div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {cell.vendas} venda{cell.vendas === 1 ? "" : "s"}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-right whitespace-nowrap">
+                        <div className="text-xs font-semibold">{fmt(p.totalValor)}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {p.totalVendas} venda{p.totalVendas === 1 ? "" : "s"}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                <TableRow className="border-t-2">
+                  <TableCell className="sticky left-0 z-10 bg-card text-xs font-semibold">
+                    Total geral
+                  </TableCell>
+                  {(porProdutoMes?.meses ?? []).map((m) => {
+                    const totalMes = produtosOrdenados.reduce(
+                      (s, p) => s + ((p.meses as any)[m]?.valor ?? 0),
+                      0,
+                    );
+                    return (
+                      <TableCell
+                        key={m}
+                        className="text-right text-xs font-semibold whitespace-nowrap"
+                      >
+                        {totalMes ? fmt(totalMes) : "—"}
+                      </TableCell>
+                    );
+                  })}
+                  <TableCell className="text-right text-xs font-semibold whitespace-nowrap">
+                    {fmt(produtosOrdenados.reduce((s, p) => s + p.totalValor, 0))}
+                  </TableCell>
+                </TableRow>
               </TableBody>
             </Table>
           </CardContent>
