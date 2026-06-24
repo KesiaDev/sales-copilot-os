@@ -1,0 +1,45 @@
+// Classificacao de produtos da Hotmart para o time da LLMidia Sales OS.
+// Os grupos seguem a mesma nomenclatura ja usada em comissionamento.tsx
+// (PRODUTOS), para nao criar uma segunda taxonomia divergente.
+
+import { norm as normalize } from "@/lib/text-normalize";
+
+export const LLMIDIA_PRODUCER_DOCUMENT = "28469058000106";
+
+// Produtos que existem na conta produtora da Hotmart mas nao pertencem a
+// este time de vendas (confirmado com a Kesia em 24/06/2026: "Reset Relacional"
+// nao deve contar nos numeros da Sales OS).
+const OUT_OF_SCOPE_PRODUCT_PATTERNS = [/resetrelacional/];
+
+function onlyDigits(s: string): string {
+  return s.replace(/\D/g, "");
+}
+
+// Vendas/reembolsos vindos de um Documento do Produtor diferente do da
+// LLMidia sao comissao de afiliacao por promover produto de outra empresa
+// (ex: "Scalehot" na planilha de 24/06/2026) — nunca devem contar como
+// receita/reembolso do time. Quando o campo nao vem preenchido (ex: webhook
+// sem esse dado), nao bloqueia — so filtra quando ha certeza.
+export function isOwnProducerDocument(documentoProdutor: string | null | undefined): boolean {
+  if (!documentoProdutor) return true;
+  return onlyDigits(documentoProdutor) === LLMIDIA_PRODUCER_DOCUMENT;
+}
+
+export function isOutOfScopeProduct(nomeProduto: string): boolean {
+  const n = normalize(nomeProduto);
+  return OUT_OF_SCOPE_PRODUCT_PATTERNS.some((re) => re.test(n));
+}
+
+// normalize() (de hotmart-csv.ts) remove tudo que nao for letra/numero, entao
+// as palavras-chave abaixo tambem vem sem espaco/acento para bater certo.
+export function classifyHotmartProduct(nomeProduto: string): string | null {
+  const n = normalize(nomeProduto);
+  if (n.includes("renovacao")) return "Renovações";
+  if (n.includes("mentoriagestor") && n.includes("trafego")) return "Mentoria Gestor de Tráfego";
+  if (n.includes("formacao") && n.includes("redessociais"))
+    return "Mentoria Gestão de Redes Sociais";
+  if (n.includes("masterandscale")) return "Master and Scale";
+  if (n.includes("accelerator")) return "Programa Accelerator";
+  if (n.includes("trafficmaster")) return "Traffic Master";
+  return null;
+}

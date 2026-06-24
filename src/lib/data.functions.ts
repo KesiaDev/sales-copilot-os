@@ -251,6 +251,72 @@ export const getVendasMensaisPorProduto = createServerFn({ method: "GET" })
     return { meses: mesesOrdenados, produtos: produtosLinhas };
   });
 
+export const getReembolsosPorProduto = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => periodoInput.parse(d ?? {}))
+  .handler(async ({ context, data: { dataInicio, dataFim } }) => {
+    async function carregar(tabela: "refunds" | "cancellations") {
+      let query = context.supabase
+        .from(tabela)
+        .select("produto_grupo, valor, ocorreu_em")
+        .order("ocorreu_em", { ascending: false })
+        .limit(5000);
+      if (dataInicio) query = query.gte("ocorreu_em", dataInicio);
+      if (dataFim) query = query.lt("ocorreu_em", `${dataFim}T23:59:59.999`);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data ?? [];
+    }
+
+    const [refunds, cancellations] = await Promise.all([
+      carregar("refunds"),
+      carregar("cancellations"),
+    ]);
+
+    const porProduto = new Map<
+      string,
+      {
+        produto: string;
+        reembolsos: number;
+        valorReembolsos: number;
+        cancelamentos: number;
+        valorCancelamentos: number;
+      }
+    >();
+    function acumular(
+      rows: { produto_grupo: string | null; valor: number }[],
+      tipo: "reembolsos" | "cancelamentos",
+    ) {
+      for (const r of rows) {
+        const produto = r.produto_grupo ?? "Não classificado";
+        if (!porProduto.has(produto)) {
+          porProduto.set(produto, {
+            produto,
+            reembolsos: 0,
+            valorReembolsos: 0,
+            cancelamentos: 0,
+            valorCancelamentos: 0,
+          });
+        }
+        const cell = porProduto.get(produto)!;
+        if (tipo === "reembolsos") {
+          cell.reembolsos += 1;
+          cell.valorReembolsos += Number(r.valor) || 0;
+        } else {
+          cell.cancelamentos += 1;
+          cell.valorCancelamentos += Number(r.valor) || 0;
+        }
+      }
+    }
+    acumular(refunds, "reembolsos");
+    acumular(cancellations, "cancelamentos");
+
+    return [...porProduto.values()].sort(
+      (a, b) =>
+        b.valorReembolsos + b.valorCancelamentos - (a.valorReembolsos + a.valorCancelamentos),
+    );
+  });
+
 // ============ DUPLICATE DETECTION ============
 export const listPossibleDuplicates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

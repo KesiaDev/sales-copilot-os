@@ -5,10 +5,12 @@ import { z } from "zod";
 const rowSchema = z.object({
   external_id: z.string().min(1),
   produto: z.string().min(1),
+  produto_grupo: z.string().optional().nullable(),
   vendedor: z.string().optional().nullable(),
   comprador_email: z.string().optional().nullable(),
   valor: z.number(),
   vendido_em: z.string(),
+  pais: z.string().optional().nullable(),
   status: z.enum(["aprovada", "reembolsada", "cancelada"]),
   raw: z.record(z.string(), z.any()).optional(),
 });
@@ -102,8 +104,10 @@ export const importHotmartCsv = createServerFn({ method: "POST" })
             : null;
           const { error } = await supabaseAdmin.from("sales").insert({
             produto: row.produto,
+            produto_grupo: row.produto_grupo ?? null,
             valor: row.valor,
             moeda: "BRL",
+            pais: row.pais ?? null,
             fonte: "hotmart",
             external_id: row.external_id,
             external_source: SOURCE,
@@ -120,6 +124,9 @@ export const importHotmartCsv = createServerFn({ method: "POST" })
         } else if (row.status === "reembolsada") {
           const { error } = await supabaseAdmin.from("refunds").insert({
             valor: row.valor,
+            produto: row.produto,
+            produto_grupo: row.produto_grupo ?? null,
+            pais: row.pais ?? null,
             motivo: "Hotmart CSV - Reembolsada",
             ocorreu_em: when,
             external_id: row.external_id,
@@ -130,6 +137,9 @@ export const importHotmartCsv = createServerFn({ method: "POST" })
         } else {
           const { error } = await supabaseAdmin.from("cancellations").insert({
             valor: row.valor,
+            produto: row.produto,
+            produto_grupo: row.produto_grupo ?? null,
+            pais: row.pais ?? null,
             motivo: "Hotmart CSV - Cancelada",
             ocorreu_em: when,
             external_id: row.external_id,

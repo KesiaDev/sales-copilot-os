@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { parseHotmartCsv, type ParsedRow } from "@/lib/hotmart-csv";
+import { parseHotmartCsv, type ParsedRow, type ExcludedRow } from "@/lib/hotmart-csv";
 import { importHotmartCsv } from "@/lib/import.functions";
 import { useFormatCurrency } from "@/components/currency-provider";
 
@@ -30,6 +30,7 @@ export function HotmartCsvImport() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);
+  const [excluded, setExcluded] = useState<ExcludedRow[]>([]);
   const [skipped, setSkipped] = useState(0);
   const [filename, setFilename] = useState("");
   const [importing, setImporting] = useState(false);
@@ -45,11 +46,12 @@ export function HotmartCsvImport() {
     try {
       const text = await file.text();
       const parsed = parseHotmartCsv(text);
-      if (parsed.rows.length === 0) {
+      if (parsed.rows.length === 0 && parsed.excluded.length === 0) {
         toast.error("Nenhuma linha válida encontrada no CSV.");
         return;
       }
       setRows(parsed.rows);
+      setExcluded(parsed.excluded);
       setSkipped(parsed.skipped);
       setOpen(true);
     } catch (err: any) {
@@ -67,10 +69,12 @@ export function HotmartCsvImport() {
           rows: rows.map((r) => ({
             external_id: r.external_id,
             produto: r.produto,
+            produto_grupo: r.produto_grupo,
             vendedor: r.vendedor,
             comprador_email: r.comprador_email,
             valor: r.valor,
             vendido_em: r.vendido_em,
+            pais: r.pais,
             status: r.status as "aprovada" | "reembolsada" | "cancelada",
             raw: r.raw,
           })),
@@ -122,8 +126,11 @@ export function HotmartCsvImport() {
             <DialogTitle>Prévia da importação</DialogTitle>
             <DialogDescription>
               {filename} — {rows.length} linhas válidas
-              {skipped > 0 ? `, ${skipped} ignoradas (status desconhecido / sem ID)` : ""}.
-              Duplicadas serão ignoradas automaticamente.
+              {skipped > 0 ? `, ${skipped} ignoradas (status desconhecido / sem ID)` : ""}
+              {excluded.length > 0
+                ? `, ${excluded.length} fora do escopo (afiliação ou produto de outra frente — não serão importadas)`
+                : ""}
+              . Duplicadas serão ignoradas automaticamente.
             </DialogDescription>
           </DialogHeader>
 
@@ -131,7 +138,25 @@ export function HotmartCsvImport() {
             <Badge variant="outline">Aprovadas: {counts.aprovada ?? 0}</Badge>
             <Badge variant="outline">Reembolsadas: {counts.reembolsada ?? 0}</Badge>
             <Badge variant="outline">Canceladas: {counts.cancelada ?? 0}</Badge>
+            {excluded.length > 0 && (
+              <Badge variant="secondary">Fora do escopo: {excluded.length}</Badge>
+            )}
           </div>
+
+          {excluded.length > 0 && (
+            <details className="rounded border p-2 text-xs">
+              <summary className="cursor-pointer font-medium">
+                Ver linhas fora do escopo (não serão importadas)
+              </summary>
+              <ul className="mt-2 max-h-32 space-y-1 overflow-auto">
+                {excluded.slice(0, 50).map((r) => (
+                  <li key={r.external_id} className="text-muted-foreground">
+                    {r.produto} — {formatCurrency(r.valor)} — {r.motivo}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
 
           <div className="max-h-[50vh] overflow-auto rounded border">
             <Table>
@@ -140,6 +165,7 @@ export function HotmartCsvImport() {
                   <TableHead>Transação</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Produto</TableHead>
+                  <TableHead>Grupo</TableHead>
                   <TableHead>Vendedor</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
@@ -151,6 +177,9 @@ export function HotmartCsvImport() {
                     <TableCell className="font-mono text-xs">{r.external_id}</TableCell>
                     <TableCell className="text-xs">{r.vendido_em.slice(0, 10)}</TableCell>
                     <TableCell className="text-xs">{r.produto}</TableCell>
+                    <TableCell className="text-xs">
+                      {r.produto_grupo ?? "Não classificado"}
+                    </TableCell>
                     <TableCell className="text-xs">{r.vendedor ?? "—"}</TableCell>
                     <TableCell>
                       <Badge

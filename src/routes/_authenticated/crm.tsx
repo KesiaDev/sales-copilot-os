@@ -15,11 +15,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { listSales, getVendasPorProduto, getVendasMensaisPorProduto } from "@/lib/data.functions";
+import {
+  listSales,
+  getVendasPorProduto,
+  getVendasMensaisPorProduto,
+  getReembolsosPorProduto,
+} from "@/lib/data.functions";
 import { getDashboardMetrics } from "@/lib/dashboard.functions";
 import { formatNumber, formatPercent, shortDate, monthLabel, todayISO } from "@/lib/format";
 import { useFormatCurrency } from "@/components/currency-provider";
-import { Database, Webhook, Package, CalendarRange } from "lucide-react";
+import { Database, Webhook, Package, CalendarRange, RotateCcw } from "lucide-react";
 import { HotmartCsvImport } from "@/components/hotmart-csv-import";
 import { DuplicateSalesReview } from "@/components/duplicate-sales-review";
 
@@ -66,6 +71,10 @@ function CrmPage() {
   const { data: porProdutoMes } = useQuery({
     queryKey: ["vendas-mensais-por-produto"],
     queryFn: () => getVendasMensaisPorProduto(),
+  });
+  const { data: reembolsosPorProduto } = useQuery({
+    queryKey: ["reembolsos-por-produto", periodo],
+    queryFn: () => getReembolsosPorProduto({ data: periodo }),
   });
 
   const fontes = (sales ?? []).reduce((acc: any, s: any) => {
@@ -252,6 +261,54 @@ function CrmPage() {
                     })}
                     <TableCell className="text-right text-xs font-semibold whitespace-nowrap">
                       {p.totalVendas} · {fmt(p.totalValor)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-destructive" />
+              <CardTitle className="text-base">Reembolsos & cancelamentos por produto</CardTitle>
+            </div>
+            <CardDescription>
+              Período: {shortDate(dataInicio)} a {shortDate(dataFim)}. Produtos fora do escopo da
+              Sales OS (afiliação ou outra frente do negócio) já não entram aqui.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produto</TableHead>
+                  <TableHead className="text-right">Reembolsos</TableHead>
+                  <TableHead className="text-right">Cancelamentos</TableHead>
+                  <TableHead className="text-right font-semibold">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(reembolsosPorProduto ?? []).length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-xs text-muted-foreground">
+                      Nenhum reembolso ou cancelamento no período.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {(reembolsosPorProduto ?? []).map((p) => (
+                  <TableRow key={p.produto}>
+                    <TableCell className="text-xs font-medium">{p.produto}</TableCell>
+                    <TableCell className="text-right text-xs">
+                      {p.reembolsos} · {fmt(p.valorReembolsos)}
+                    </TableCell>
+                    <TableCell className="text-right text-xs">
+                      {p.cancelamentos} · {fmt(p.valorCancelamentos)}
+                    </TableCell>
+                    <TableCell className="text-right text-xs font-semibold">
+                      {fmt(p.valorReembolsos + p.valorCancelamentos)}
                     </TableCell>
                   </TableRow>
                 ))}

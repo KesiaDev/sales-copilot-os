@@ -1,15 +1,30 @@
 // Client-side Hotmart CSV parser
+import {
+  classifyHotmartProduct,
+  isOutOfScopeProduct,
+  isOwnProducerDocument,
+} from "@/lib/hotmart-product";
+import { norm } from "@/lib/text-normalize";
 
 export type ParsedRow = {
   external_id: string;
   produto: string;
+  produto_grupo: string | null;
   vendedor: string | null;
   comprador: string | null;
   comprador_email: string | null;
   valor: number;
   vendido_em: string; // ISO
+  pais: string | null;
   status: "aprovada" | "reembolsada" | "cancelada" | "outro";
   raw: Record<string, string>;
+};
+
+export type ExcludedRow = {
+  external_id: string;
+  produto: string;
+  valor: number;
+  motivo: string;
 };
 
 function detectDelimiter(line: string): string {
@@ -48,14 +63,6 @@ function splitCsvLine(line: string, delim: string): string[] {
   }
   out.push(cur);
   return out.map((s) => s.trim());
-}
-
-function norm(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "");
 }
 
 function findCol(headers: string[], keys: string[]): number {
@@ -113,12 +120,13 @@ function parseStatus(raw: string): ParsedRow["status"] {
 
 export function parseHotmartCsv(text: string): {
   rows: ParsedRow[];
+  excluded: ExcludedRow[];
   headers: string[];
   skipped: number;
 } {
   const cleaned = text.replace(/^\uFEFF/, "");
   const lines = cleaned.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length < 2) return { rows: [], headers: [], skipped: 0 };
+  if (lines.length < 2) return { rows: [], excluded: [], headers: [], skipped: 0 };
   const delim = detectDelimiter(lines[0]);
   const headers = splitCsvLine(lines[0], delim);
 
@@ -141,8 +149,11 @@ export function parseHotmartCsv(text: string): {
   ]);
   const idxData = findCol(headers, ["data da compra", "data", "order date", "purchase date"]);
   const idxStatus = findCol(headers, ["status", "situacao"]);
+  const idxProdutorDoc = findCol(headers, ["documento do produtor", "producer document"]);
+  const idxPais = findCol(headers, ["pais", "country"]);
 
   const rows: ParsedRow[] = [];
+  const excluded: ExcludedRow[] = [];
   let skipped = 0;
   for (let i = 1; i < lines.length; i++) {
     const cols = splitCsvLine(lines[i], delim);
@@ -158,17 +169,37 @@ export function parseHotmartCsv(text: string): {
       skipped++;
       continue;
     }
+    const produto = (idxProd >= 0 ? cols[idxProd] : "").trim() || "Hotmart Product";
+    const produtorDoc = idxProdutorDoc >= 0 ? cols[idxProdutorDoc].trim() : "";
+    const valor = parseValor(idxValor >= 0 ? cols[idxValor] : "");
+
+    if (!isOwnProducerDocument(produtorDoc)) {
+      excluded.push({
+        external_id,
+        produto,
+        valor,
+        motivo: "Comissão de afiliação — produto não é da LLMídia",
+      });
+      continue;
+    }
+    if (isOutOfScopeProduct(produto)) {
+      excluded.push({ external_id, produto, valor, motivo: "Produto fora do escopo da Sales OS" });
+      continue;
+    }
+
     rows.push({
       external_id,
-      produto: (idxProd >= 0 ? cols[idxProd] : "").trim() || "Hotmart Product",
+      produto,
+      produto_grupo: classifyHotmartProduct(produto),
       vendedor: idxVend >= 0 ? cols[idxVend].trim() || null : null,
       comprador: idxComp >= 0 ? cols[idxComp].trim() || null : null,
       comprador_email: idxEmail >= 0 ? cols[idxEmail].trim() || null : null,
-      valor: parseValor(idxValor >= 0 ? cols[idxValor] : ""),
+      valor,
       vendido_em: parseDate(idxData >= 0 ? cols[idxData] : ""),
+      pais: idxPais >= 0 ? cols[idxPais].trim() || null : null,
       status,
       raw,
     });
   }
-  return { rows, headers, skipped };
+  return { rows, excluded, headers, skipped };
 }
