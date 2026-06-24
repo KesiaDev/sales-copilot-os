@@ -1,10 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useQuery, queryOptions } from "@tanstack/react-query";
 import { Topbar } from "@/components/topbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getDashboardMetrics } from "@/lib/dashboard.functions";
-import { formatPercent, shortDate } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getDashboardMetrics, getResultadosPeriodo } from "@/lib/dashboard.functions";
+import { formatPercent, shortDate, todayISO } from "@/lib/format";
 import { useFormatCurrency } from "@/components/currency-provider";
+import { CalendarRange } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -54,6 +59,182 @@ const dashboardQuery = () =>
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
+
+function isoDate(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+function startOfWeek(d: Date) {
+  const r = new Date(d);
+  const dow = (r.getDay() + 6) % 7; // segunda = 0
+  r.setDate(r.getDate() - dow);
+  return r;
+}
+
+function ResultadosPeriodo() {
+  const formatCurrency = useFormatCurrency();
+  const hoje = new Date();
+  const [dataInicio, setDataInicio] = useState(
+    isoDate(new Date(hoje.getFullYear(), hoje.getMonth(), 1)),
+  );
+  const [dataFim, setDataFim] = useState(todayISO());
+  const [presetAtivo, setPresetAtivo] = useState<"hoje" | "semana" | "mes" | "ano" | "custom">(
+    "mes",
+  );
+
+  const periodo = useMemo(() => ({ dataInicio, dataFim }), [dataInicio, dataFim]);
+  const { data, isFetching } = useQuery({
+    queryKey: ["resultados-periodo", periodo],
+    queryFn: () => getResultadosPeriodo({ data: periodo }),
+  });
+
+  function aplicarPreset(preset: "hoje" | "semana" | "mes" | "ano") {
+    setPresetAtivo(preset);
+    const hoje = new Date();
+    if (preset === "hoje") setDataInicio(isoDate(hoje));
+    if (preset === "semana") setDataInicio(isoDate(startOfWeek(hoje)));
+    if (preset === "mes") setDataInicio(isoDate(new Date(hoje.getFullYear(), hoje.getMonth(), 1)));
+    if (preset === "ano") setDataInicio(isoDate(new Date(hoje.getFullYear(), 0, 1)));
+    setDataFim(todayISO());
+  }
+
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CalendarRange className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Resultados do período</CardTitle>
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            {(["hoje", "semana", "mes", "ano"] as const).map((p) => (
+              <Button
+                key={p}
+                variant={presetAtivo === p ? "default" : "outline"}
+                size="sm"
+                className="h-8"
+                onClick={() => aplicarPreset(p)}
+              >
+                {p === "hoje"
+                  ? "Hoje"
+                  : p === "semana"
+                    ? "Esta semana"
+                    : p === "mes"
+                      ? "Este mês"
+                      : "Este ano"}
+              </Button>
+            ))}
+            <div>
+              <Label className="mb-1 block text-xs text-muted-foreground">De</Label>
+              <Input
+                type="date"
+                value={dataInicio}
+                onChange={(e) => {
+                  setPresetAtivo("custom");
+                  setDataInicio(e.target.value);
+                }}
+                className="h-8 w-[150px]"
+              />
+            </div>
+            <div>
+              <Label className="mb-1 block text-xs text-muted-foreground">Até</Label>
+              <Input
+                type="date"
+                value={dataFim}
+                onChange={(e) => {
+                  setPresetAtivo("custom");
+                  setDataFim(e.target.value);
+                }}
+                className="h-8 w-[150px]"
+              />
+            </div>
+          </div>
+        </div>
+        <CardDescription>
+          {shortDate(dataInicio)} a {shortDate(dataFim)}
+          {isFetching ? " — atualizando..." : ""}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <div className="rounded-lg border border-border/60 bg-card/50 p-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Receita</div>
+            <div className="mt-1 text-xl font-bold tabular-nums">
+              {formatCurrency(data?.receita ?? 0)}
+            </div>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-card/50 p-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Deals</div>
+            <div className="mt-1 text-xl font-bold tabular-nums">{data?.deals ?? 0}</div>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-card/50 p-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              Ticket médio
+            </div>
+            <div className="mt-1 text-xl font-bold tabular-nums">
+              {formatCurrency(data?.ticketMedio ?? 0)}
+            </div>
+          </div>
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Reembolsos</div>
+            <div className="mt-1 text-xl font-bold tabular-nums text-destructive">
+              {formatCurrency(data?.reembolsos ?? 0)}
+            </div>
+          </div>
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              Cancelamentos
+            </div>
+            <div className="mt-1 text-xl font-bold tabular-nums text-destructive">
+              {formatCurrency(data?.cancelamentos ?? 0)}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Por vendedor
+            </p>
+            <div className="space-y-1">
+              {(data?.porVendedor ?? []).map((v) => (
+                <div key={v.nome} className="flex items-center justify-between text-sm">
+                  <span>{v.nome}</span>
+                  <span className="font-medium tabular-nums">
+                    {formatCurrency(v.receita)}{" "}
+                    <span className="text-xs text-muted-foreground">({v.vendas})</span>
+                  </span>
+                </div>
+              ))}
+              {!data?.porVendedor?.length && (
+                <p className="text-xs text-muted-foreground">Sem vendas no período.</p>
+              )}
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Por produto
+            </p>
+            <div className="space-y-1">
+              {(data?.porProduto ?? []).map((p) => (
+                <div key={p.produto} className="flex items-center justify-between text-sm">
+                  <span>{p.produto}</span>
+                  <span className="font-medium tabular-nums">
+                    {formatCurrency(p.receita)}{" "}
+                    <span className="text-xs text-muted-foreground">({p.vendas})</span>
+                  </span>
+                </div>
+              ))}
+              {!data?.porProduto?.length && (
+                <p className="text-xs text-muted-foreground">Sem vendas no período.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function Kpi({ icon: Icon, label, value, hint, hintClass, accent }: any) {
   return (
@@ -154,6 +335,8 @@ function DashboardPage() {
             <p className="text-sm font-medium">{banner.text}</p>
           </div>
         )}
+
+        <ResultadosPeriodo />
 
         {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

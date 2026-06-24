@@ -1,6 +1,88 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { fetchAllRows } from "@/lib/fetch-all-rows";
+import { z } from "zod";
+
+const periodoInput = z.object({
+  dataInicio: z.string(),
+  dataFim: z.string(),
+});
+
+// Resultados de um periodo qualquer escolhido na tela (dia/semana/mes/customizado),
+// para apresentar numeros oficiais (sem duplicata) de uma janela especifica — ex:
+// "01/06/2026 a 24/06/2026" — sem depender dos cartoes fixos de hoje/mes atual.
+export const getResultadosPeriodo = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => periodoInput.parse(d))
+  .handler(async ({ context, data: { dataInicio, dataFim } }) => {
+    const { supabase } = context;
+    const fimExclusivo = `${dataFim}T23:59:59.999`;
+
+    const [sales, refunds, cancellations] = await Promise.all([
+      fetchAllRows<{
+        valor: number;
+        produto_grupo: string | null;
+        profile_id: string | null;
+        profiles: { full_name: string } | null;
+      }>(
+        ({ from, to }) =>
+          supabase
+            .from("sales")
+            .select("valor, produto_grupo, profile_id, profiles(full_name)")
+            .eq("possible_duplicate", false)
+            .gte("vendido_em", dataInicio)
+            .lte("vendido_em", fimExclusivo)
+            .range(from, to) as any,
+      ),
+      fetchAllRows<{ valor: number }>(({ from, to }) =>
+        supabase
+          .from("refunds")
+          .select("valor")
+          .gte("ocorreu_em", dataInicio)
+          .lte("ocorreu_em", fimExclusivo)
+          .range(from, to),
+      ),
+      fetchAllRows<{ valor: number }>(({ from, to }) =>
+        supabase
+          .from("cancellations")
+          .select("valor")
+          .gte("ocorreu_em", dataInicio)
+          .lte("ocorreu_em", fimExclusivo)
+          .range(from, to),
+      ),
+    ]);
+
+    const receita = sales.reduce((s, r) => s + Number(r.valor), 0);
+    const reembolsos = refunds.reduce((s, r) => s + Number(r.valor), 0);
+    const cancelamentosTotal = cancellations.reduce((s, r) => s + Number(r.valor), 0);
+
+    const porVendedorMap = new Map<string, { nome: string; receita: number; vendas: number }>();
+    const porProdutoMap = new Map<string, { produto: string; receita: number; vendas: number }>();
+    for (const s of sales) {
+      const nome = s.profiles?.full_name ?? "Sem vendedor";
+      if (!porVendedorMap.has(nome)) porVendedorMap.set(nome, { nome, receita: 0, vendas: 0 });
+      const v = porVendedorMap.get(nome)!;
+      v.receita += Number(s.valor);
+      v.vendas += 1;
+
+      const produto = s.produto_grupo ?? "Não classificado";
+      if (!porProdutoMap.has(produto))
+        porProdutoMap.set(produto, { produto, receita: 0, vendas: 0 });
+      const p = porProdutoMap.get(produto)!;
+      p.receita += Number(s.valor);
+      p.vendas += 1;
+    }
+
+    return {
+      receita,
+      deals: sales.length,
+      ticketMedio: sales.length ? receita / sales.length : 0,
+      reembolsos,
+      cancelamentos: cancelamentosTotal,
+      porVendedor: [...porVendedorMap.values()].sort((a, b) => b.receita - a.receita),
+      porProduto: [...porProdutoMap.values()].sort((a, b) => b.receita - a.receita),
+    };
+  });
 
 export const getDashboardMetrics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
