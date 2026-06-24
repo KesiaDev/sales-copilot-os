@@ -14,13 +14,17 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
         if (unauthorized) return unauthorized;
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { findPossibleDuplicateSale, buildDuplicateReason } =
+            await import("@/lib/duplicate-detection");
           const payload = (await request.json()) as any;
 
           // Hotmart event shape: { event, data: { purchase: { transaction, price, status }, buyer, producer, product, ... } }
-          // NOTA: vendas aprovadas/completas NAO sao gravadas aqui. A Clint ja cria o deal WON
-          // automaticamente para vendas Hotmart, e o workflow n8n "02 - Clint: Sync Negocios
-          // Ganhos" sincroniza esse deal (com vendedor correto) para a tabela sales. Gravar aqui
-          // tambem duplicaria a venda (uma vez sem vendedor, outra com).
+          // NOTA: a Clint normalmente cria o deal WON e sincroniza pra tabela sales com o
+          // vendedor correto (workflow n8n "02 - Clint: Sync Negocios Ganhos"). Mas vendedores
+          // as vezes esquecem de marcar "Ganho" na Clint, e a venda nunca aparecia em lugar
+          // nenhum mesmo o dinheiro tendo entrado na Hotmart — por isso PURCHASE_APPROVED/
+          // PURCHASE_COMPLETE tambem gravam aqui (sem vendedor), usando a mesma deteccao de
+          // duplicata da Clint pra nao contar a venda duas vezes quando ela sincronizar depois.
           const event = payload?.event ?? "UNKNOWN";
           const purchase = payload?.data?.purchase ?? payload?.data ?? {};
           const buyer = payload?.data?.buyer ?? {};
@@ -48,7 +52,47 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
 
           const produto_grupo = productName ? classifyHotmartProduct(productName) : null;
 
-          if (event === "PURCHASE_REFUNDED") {
+          if (event === "PURCHASE_APPROVED" || event === "PURCHASE_COMPLETE") {
+            const externalSource = "hotmart_webhook";
+            const compradorEmail: string | null = buyer?.email ?? null;
+            const valor = Number(purchase?.price?.value ?? 0);
+            const vendidoEm = purchase?.approved_date
+              ? new Date(purchase.approved_date).toISOString()
+              : new Date().toISOString();
+
+            const { data: existing } = transaction
+              ? await supabaseAdmin
+                  .from("sales")
+                  .select("id")
+                  .eq("external_id", transaction)
+                  .eq("external_source", externalSource)
+                  .maybeSingle()
+              : { data: null };
+
+            if (!existing) {
+              const duplicate = await findPossibleDuplicateSale(supabaseAdmin, {
+                valor,
+                vendidoEm,
+                excludeExternalSource: externalSource,
+                compradorEmail,
+              });
+              await supabaseAdmin.from("sales").insert({
+                produto: productName || "Hotmart Product",
+                produto_grupo,
+                valor,
+                pais,
+                fonte: "hotmart",
+                external_id: transaction || null,
+                external_source: externalSource,
+                vendido_em: vendidoEm,
+                comprador_email: compradorEmail,
+                metadata: payload,
+                possible_duplicate: !!duplicate,
+                duplicate_of: duplicate?.id ?? null,
+                duplicate_reason: duplicate ? buildDuplicateReason(duplicate) : null,
+              });
+            }
+          } else if (event === "PURCHASE_REFUNDED") {
             await supabaseAdmin.from("refunds").insert({
               valor: Number(purchase?.price?.value ?? 0),
               produto: productName || null,
