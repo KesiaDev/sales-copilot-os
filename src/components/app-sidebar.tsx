@@ -1,13 +1,35 @@
 import brandLogo from "@/assets/brand-logo.jpeg.asset.json";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Users, ClipboardList, Trophy, Brain, Sparkles,
-  FileText, TrendingUp, MessageSquareWarning, Database, Bot, LogOut, RefreshCw, DollarSign,
+  LayoutDashboard,
+  Users,
+  ClipboardList,
+  Trophy,
+  Brain,
+  Sparkles,
+  FileText,
+  TrendingUp,
+  MessageSquareWarning,
+  Database,
+  Bot,
+  LogOut,
+  RefreshCw,
+  DollarSign,
+  Activity,
 } from "lucide-react";
 
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,9 +57,9 @@ const groups = [
       { title: "Fechamento Diário", url: "/fechamento", icon: ClipboardList },
       { title: "Ranking", url: "/ranking", icon: Trophy },
       { title: "CRM Performance", url: "/crm", icon: Database },
+      { title: "Desempenho Comercial", url: "/desempenho", icon: Activity },
       { title: "Renovações", url: "/renovacoes", icon: RefreshCw },
       { title: "Banco de Objeções", url: "/objecoes", icon: MessageSquareWarning },
-
     ],
   },
   {
@@ -68,7 +90,9 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="flex flex-col leading-tight">
               <span className="text-sm font-bold tracking-tight">LLMídia</span>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Sales OS</span>
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                Sales OS
+              </span>
             </div>
           )}
         </Link>
@@ -100,7 +124,12 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
-        <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="w-full justify-start gap-2"
+        >
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Sair</span>}
         </Button>

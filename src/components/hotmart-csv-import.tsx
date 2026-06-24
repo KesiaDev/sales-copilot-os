@@ -10,7 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -60,6 +67,7 @@ export function HotmartCsvImport() {
             external_id: r.external_id,
             produto: r.produto,
             vendedor: r.vendedor,
+            comprador_email: r.comprador_email,
             valor: r.valor,
             vendido_em: r.vendido_em,
             status: r.status as "aprovada" | "reembolsada" | "cancelada",
@@ -68,7 +76,10 @@ export function HotmartCsvImport() {
         },
       });
       toast.success(
-        `Importação concluída: ${res.inserted} inseridas, ${res.duplicated} duplicadas, ${res.errors} erros.`,
+        `Importação concluída: ${res.inserted} inseridas, ${res.duplicated} duplicadas, ${res.errors} erros.` +
+          (res.flaggedPossibleDuplicates > 0
+            ? ` ${res.flaggedPossibleDuplicates} marcadas como possível duplicata cruzada (revisar no CRM).`
+            : ""),
       );
       if (res.errors > 0 && res.errorDetails.length) {
         console.error("Erros de importação:", res.errorDetails);

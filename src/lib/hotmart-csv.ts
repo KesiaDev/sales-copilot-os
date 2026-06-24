@@ -5,6 +5,7 @@ export type ParsedRow = {
   produto: string;
   vendedor: string | null;
   comprador: string | null;
+  comprador_email: string | null;
   valor: number;
   vendido_em: string; // ISO
   status: "aprovada" | "reembolsada" | "cancelada" | "outro";
@@ -69,7 +70,7 @@ function findCol(headers: string[], keys: string[]): number {
 
 function parseValor(raw: string): number {
   if (!raw) return 0;
-  let s = raw.replace(/[^\d,.\-]/g, "");
+  let s = raw.replace(/[^\d,.-]/g, "");
   // If both . and , present, assume . thousands and , decimal (pt-BR)
   if (s.includes(",") && s.includes(".")) {
     s = s.replace(/\./g, "").replace(",", ".");
@@ -99,13 +100,22 @@ function parseStatus(raw: string): ParsedRow["status"] {
   const s = norm(raw);
   if (!s) return "outro";
   if (s.includes("aprov") || s.includes("complet") || s.includes("paid")) return "aprovada";
-  if (s.includes("reembols") || s.includes("refund") || s.includes("estorn") || s.includes("chargeback"))
+  if (
+    s.includes("reembols") ||
+    s.includes("refund") ||
+    s.includes("estorn") ||
+    s.includes("chargeback")
+  )
     return "reembolsada";
   if (s.includes("cancel")) return "cancelada";
   return "outro";
 }
 
-export function parseHotmartCsv(text: string): { rows: ParsedRow[]; headers: string[]; skipped: number } {
+export function parseHotmartCsv(text: string): {
+  rows: ParsedRow[];
+  headers: string[];
+  skipped: number;
+} {
   const cleaned = text.replace(/^\uFEFF/, "");
   const lines = cleaned.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length < 2) return { rows: [], headers: [], skipped: 0 };
@@ -116,7 +126,19 @@ export function parseHotmartCsv(text: string): { rows: ParsedRow[]; headers: str
   const idxProd = findCol(headers, ["nome do produto", "produto", "product"]);
   const idxVend = findCol(headers, ["vendedor", "seller"]);
   const idxComp = findCol(headers, ["comprador", "buyer", "cliente"]);
-  const idxValor = findCol(headers, ["voce recebeu", "valor", "vocereceberau", "comissao", "price"]);
+  const idxEmail = findCol(headers, [
+    "email do comprador",
+    "e-mail do comprador",
+    "email",
+    "buyer email",
+  ]);
+  const idxValor = findCol(headers, [
+    "voce recebeu",
+    "valor",
+    "vocereceberau",
+    "comissao",
+    "price",
+  ]);
   const idxData = findCol(headers, ["data da compra", "data", "order date", "purchase date"]);
   const idxStatus = findCol(headers, ["status", "situacao"]);
 
@@ -141,6 +163,7 @@ export function parseHotmartCsv(text: string): { rows: ParsedRow[]; headers: str
       produto: (idxProd >= 0 ? cols[idxProd] : "").trim() || "Hotmart Product",
       vendedor: idxVend >= 0 ? cols[idxVend].trim() || null : null,
       comprador: idxComp >= 0 ? cols[idxComp].trim() || null : null,
+      comprador_email: idxEmail >= 0 ? cols[idxEmail].trim() || null : null,
       valor: parseValor(idxValor >= 0 ? cols[idxValor] : ""),
       vendido_em: parseDate(idxData >= 0 ? cols[idxData] : ""),
       status,

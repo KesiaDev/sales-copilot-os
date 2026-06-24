@@ -6,6 +6,7 @@ const rowSchema = z.object({
   external_id: z.string().min(1),
   produto: z.string().min(1),
   vendedor: z.string().optional().nullable(),
+  comprador_email: z.string().optional().nullable(),
   valor: z.number(),
   vendido_em: z.string(),
   status: z.enum(["aprovada", "reembolsada", "cancelada"]),
@@ -26,6 +27,8 @@ export const importHotmartCsv = createServerFn({ method: "POST" })
     if (!isHead) throw new Error("Apenas heads podem importar CSV.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { findPossibleDuplicateSale, buildDuplicateReason } =
+      await import("@/lib/duplicate-detection");
 
     // Load profiles for vendor mapping
     const { data: profiles } = await supabaseAdmin.from("profiles").select("id, full_name");
@@ -45,15 +48,28 @@ export const importHotmartCsv = createServerFn({ method: "POST" })
     const SOURCE = "hotmart_csv";
     let inserted = 0;
     let duplicated = 0;
+    let flaggedPossibleDuplicates = 0;
     let errors = 0;
     const errorDetails: string[] = [];
 
     // Pre-check existing external_ids across the three tables
     const ids = data.rows.map((r) => r.external_id);
     const [existingSales, existingRefunds, existingCancels] = await Promise.all([
-      supabaseAdmin.from("sales").select("external_id").in("external_id", ids).eq("external_source", SOURCE),
-      supabaseAdmin.from("refunds").select("external_id").in("external_id", ids).eq("external_source", SOURCE),
-      supabaseAdmin.from("cancellations").select("external_id").in("external_id", ids).eq("external_source", SOURCE),
+      supabaseAdmin
+        .from("sales")
+        .select("external_id")
+        .in("external_id", ids)
+        .eq("external_source", SOURCE),
+      supabaseAdmin
+        .from("refunds")
+        .select("external_id")
+        .in("external_id", ids)
+        .eq("external_source", SOURCE),
+      supabaseAdmin
+        .from("cancellations")
+        .select("external_id")
+        .in("external_id", ids)
+        .eq("external_source", SOURCE),
     ]);
     const existing = new Set<string>([
       ...(existingSales.data ?? []).map((r: any) => r.external_id),
@@ -70,6 +86,20 @@ export const importHotmartCsv = createServerFn({ method: "POST" })
         const profile_id = findProfileId(row.vendedor);
         const when = row.vendido_em || new Date().toISOString();
         if (row.status === "aprovada") {
+          // O CSV traz o codigo de transacao da Hotmart, enquanto vendas sincronizadas
+          // da Clint usam o id do deal — namespaces diferentes, entao o unique index de
+          // external_id/external_source nao detecta se essa venda ja chegou via Clint.
+          const duplicate = await findPossibleDuplicateSale(supabaseAdmin, {
+            valor: row.valor,
+            vendidoEm: when,
+            excludeExternalSource: SOURCE,
+            compradorEmail: row.comprador_email,
+          });
+          const possible_duplicate = !!duplicate;
+          const duplicate_of: string | null = duplicate?.id ?? null;
+          const duplicate_reason: string | null = duplicate
+            ? buildDuplicateReason(duplicate)
+            : null;
           const { error } = await supabaseAdmin.from("sales").insert({
             produto: row.produto,
             valor: row.valor,
@@ -79,9 +109,14 @@ export const importHotmartCsv = createServerFn({ method: "POST" })
             external_source: SOURCE,
             profile_id,
             vendido_em: when,
+            comprador_email: row.comprador_email ?? null,
             metadata: row.raw ?? null,
+            possible_duplicate,
+            duplicate_of,
+            duplicate_reason,
           });
           if (error) throw error;
+          if (duplicate) flaggedPossibleDuplicates++;
         } else if (row.status === "reembolsada") {
           const { error } = await supabaseAdmin.from("refunds").insert({
             valor: row.valor,
@@ -110,5 +145,5 @@ export const importHotmartCsv = createServerFn({ method: "POST" })
       }
     }
 
-    return { inserted, duplicated, errors, errorDetails };
+    return { inserted, duplicated, flaggedPossibleDuplicates, errors, errorDetails };
   });

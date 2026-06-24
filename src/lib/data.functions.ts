@@ -6,8 +6,7 @@ import { z } from "zod";
 export const listProfiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("profiles").select("*").order("full_name");
+    const { data, error } = await context.supabase.from("profiles").select("*").order("full_name");
     if (error) throw error;
     return data;
   });
@@ -16,10 +15,19 @@ export const getCurrentProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data: profile } = await context.supabase
-      .from("profiles").select("*").eq("user_id", context.userId).maybeSingle();
+      .from("profiles")
+      .select("*")
+      .eq("user_id", context.userId)
+      .maybeSingle();
     const { data: roles } = await context.supabase
-      .from("user_roles").select("role").eq("user_id", context.userId);
-    return { profile, roles: (roles ?? []).map((r: any) => r.role), isHead: (roles ?? []).some((r: any) => r.role === "head") };
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    return {
+      profile,
+      roles: (roles ?? []).map((r: any) => r.role),
+      isHead: (roles ?? []).some((r: any) => r.role === "head"),
+    };
   });
 
 const profileUpdate = z.object({
@@ -65,7 +73,8 @@ export const upsertDailyReport = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => dailyReportInput.parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
-      .from("daily_reports").upsert(data, { onConflict: "profile_id,data" });
+      .from("daily_reports")
+      .upsert(data, { onConflict: "profile_id,data" });
     if (error) throw error;
     return { ok: true };
   });
@@ -76,7 +85,8 @@ export const listDailyReports = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("daily_reports")
       .select("*, profile:profiles(id, full_name)")
-      .order("data", { ascending: false }).limit(100);
+      .order("data", { ascending: false })
+      .limit(100);
     if (error) throw error;
     return data;
   });
@@ -103,7 +113,9 @@ export const listObjections = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
-      .from("objections").select("*, profile:profiles(full_name)").order("frequencia", { ascending: false });
+      .from("objections")
+      .select("*, profile:profiles(full_name)")
+      .order("frequencia", { ascending: false });
     if (error) throw error;
     return data;
   });
@@ -113,8 +125,10 @@ export const listSales = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
-      .from("sales").select("*, profile:profiles(full_name)")
-      .order("vendido_em", { ascending: false }).limit(200);
+      .from("sales")
+      .select("*, profile:profiles(full_name)")
+      .order("vendido_em", { ascending: false })
+      .limit(200);
     if (error) throw error;
     return data;
   });
@@ -122,7 +136,12 @@ export const listSales = createServerFn({ method: "GET" })
 export const getVendasPorProduto = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const rows: { profile_id: string | null; produto_grupo: string | null; valor: number; profiles: { full_name: string } | null }[] = [];
+    const rows: {
+      profile_id: string | null;
+      produto_grupo: string | null;
+      valor: number;
+      profiles: { full_name: string } | null;
+    }[] = [];
     let from = 0;
     const pageSize = 1000;
     while (true) {
@@ -138,7 +157,15 @@ export const getVendasPorProduto = createServerFn({ method: "GET" })
     }
 
     const produtos = new Set<string>();
-    const porVendedor = new Map<string, { nome: string; produtos: Map<string, { vendas: number; valor: number }>; totalVendas: number; totalValor: number }>();
+    const porVendedor = new Map<
+      string,
+      {
+        nome: string;
+        produtos: Map<string, { vendas: number; valor: number }>;
+        totalVendas: number;
+        totalValor: number;
+      }
+    >();
 
     for (const r of rows) {
       const nome = r.profiles?.full_name ?? "Sem vendedor";
@@ -164,6 +191,96 @@ export const getVendasPorProduto = createServerFn({ method: "GET" })
     return { produtos: [...produtos].sort(), vendedores };
   });
 
+export const getVendasMensaisPorProduto = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const rows: { produto_grupo: string | null; valor: number; vendido_em: string }[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data, error } = await context.supabase
+        .from("sales")
+        .select("produto_grupo, valor, vendido_em")
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      rows.push(...data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+
+    const meses = new Set<string>();
+    const produtos = new Set<string>();
+    const porProduto = new Map<string, Map<string, { vendas: number; valor: number }>>();
+
+    for (const r of rows) {
+      const produto = r.produto_grupo ?? "Não classificado";
+      const mes = r.vendido_em.slice(0, 7); // YYYY-MM
+      produtos.add(produto);
+      meses.add(mes);
+
+      if (!porProduto.has(produto)) porProduto.set(produto, new Map());
+      const porMes = porProduto.get(produto)!;
+      if (!porMes.has(mes)) porMes.set(mes, { vendas: 0, valor: 0 });
+      const cell = porMes.get(mes)!;
+      cell.vendas += 1;
+      cell.valor += Number(r.valor) || 0;
+    }
+
+    const mesesOrdenados = [...meses].sort();
+    const produtosLinhas = [...produtos].sort().map((produto) => ({
+      produto,
+      meses: Object.fromEntries(porProduto.get(produto) ?? new Map()),
+      totalVendas: [...(porProduto.get(produto)?.values() ?? [])].reduce((s, c) => s + c.vendas, 0),
+      totalValor: [...(porProduto.get(produto)?.values() ?? [])].reduce((s, c) => s + c.valor, 0),
+    }));
+
+    return { meses: mesesOrdenados, produtos: produtosLinhas };
+  });
+
+// ============ DUPLICATE DETECTION ============
+export const listPossibleDuplicates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("sales")
+      .select(
+        "*, profile:profiles(full_name), original:sales!sales_duplicate_of_fkey(id, produto, valor, vendido_em, fonte)",
+      )
+      .eq("possible_duplicate", true)
+      .order("vendido_em", { ascending: false });
+    if (error) throw error;
+    return data;
+  });
+
+const resolveDuplicateInput = z.object({
+  id: z.string().uuid(),
+  action: z.enum(["dismiss", "delete"]),
+});
+
+export const resolveDuplicate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => resolveDuplicateInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const { data: isHead } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "head",
+    });
+    if (!isHead) throw new Error("Apenas heads podem resolver duplicatas.");
+
+    if (data.action === "delete") {
+      const { error } = await context.supabase.from("sales").delete().eq("id", data.id);
+      if (error) throw error;
+    } else {
+      const { error } = await context.supabase
+        .from("sales")
+        .update({ possible_duplicate: false, duplicate_of: null, duplicate_reason: null })
+        .eq("id", data.id);
+      if (error) throw error;
+    }
+    return { ok: true };
+  });
+
 // ============ GOALS ============
 const goalInput = z.object({
   profile_id: z.string().uuid().nullable(),
@@ -175,7 +292,9 @@ export const upsertGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => goalInput.parse(d))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase.from("goals").upsert(data, { onConflict: "profile_id,mes,ano" });
+    const { error } = await context.supabase
+      .from("goals")
+      .upsert(data, { onConflict: "profile_id,mes,ano" });
     if (error) throw error;
     return { ok: true };
   });

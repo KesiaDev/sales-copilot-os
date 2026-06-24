@@ -20,12 +20,14 @@ import { Route as AuthenticatedInteligenciaRouteImport } from './routes/_authent
 import { Route as AuthenticatedFechamentoRouteImport } from './routes/_authenticated/fechamento'
 import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
 import { Route as AuthenticatedDiscRouteImport } from './routes/_authenticated/disc'
+import { Route as AuthenticatedDesempenhoRouteImport } from './routes/_authenticated/desempenho'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDailyRouteImport } from './routes/_authenticated/daily'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
 import { Route as AuthenticatedComissionamentoRouteImport } from './routes/_authenticated/comissionamento'
 import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
+import { Route as ApiPublicWebhooksClintDashboardsRouteImport } from './routes/api/public/webhooks/clint-dashboards'
 import { Route as ApiPublicWebhooksClintRouteImport } from './routes/api/public/webhooks/clint'
 import { Route as ApiPublicMetricsDailyRouteImport } from './routes/api/public/metrics/daily'
 
@@ -84,6 +86,11 @@ const AuthenticatedDiscRoute = AuthenticatedDiscRouteImport.update({
   path: '/disc',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDesempenhoRoute = AuthenticatedDesempenhoRouteImport.update({
+  id: '/desempenho',
+  path: '/desempenho',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -116,6 +123,12 @@ const ApiPublicWebhooksHotmartRoute =
     path: '/api/public/webhooks/hotmart',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksClintDashboardsRoute =
+  ApiPublicWebhooksClintDashboardsRouteImport.update({
+    id: '/api/public/webhooks/clint-dashboards',
+    path: '/api/public/webhooks/clint-dashboards',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksClintRoute = ApiPublicWebhooksClintRouteImport.update({
   id: '/api/public/webhooks/clint',
   path: '/api/public/webhooks/clint',
@@ -135,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/crm': typeof AuthenticatedCrmRoute
   '/daily': typeof AuthenticatedDailyRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/desempenho': typeof AuthenticatedDesempenhoRoute
   '/disc': typeof AuthenticatedDiscRoute
   '/equipe': typeof AuthenticatedEquipeRoute
   '/fechamento': typeof AuthenticatedFechamentoRoute
@@ -145,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/renovacoes': typeof AuthenticatedRenovacoesRoute
   '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
+  '/api/public/webhooks/clint-dashboards': typeof ApiPublicWebhooksClintDashboardsRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRoutesByTo {
@@ -155,6 +170,7 @@ export interface FileRoutesByTo {
   '/crm': typeof AuthenticatedCrmRoute
   '/daily': typeof AuthenticatedDailyRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/desempenho': typeof AuthenticatedDesempenhoRoute
   '/disc': typeof AuthenticatedDiscRoute
   '/equipe': typeof AuthenticatedEquipeRoute
   '/fechamento': typeof AuthenticatedFechamentoRoute
@@ -165,6 +181,7 @@ export interface FileRoutesByTo {
   '/renovacoes': typeof AuthenticatedRenovacoesRoute
   '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
+  '/api/public/webhooks/clint-dashboards': typeof ApiPublicWebhooksClintDashboardsRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRoutesById {
@@ -177,6 +194,7 @@ export interface FileRoutesById {
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/daily': typeof AuthenticatedDailyRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/desempenho': typeof AuthenticatedDesempenhoRoute
   '/_authenticated/disc': typeof AuthenticatedDiscRoute
   '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
   '/_authenticated/fechamento': typeof AuthenticatedFechamentoRoute
@@ -187,6 +205,7 @@ export interface FileRoutesById {
   '/_authenticated/renovacoes': typeof AuthenticatedRenovacoesRoute
   '/api/public/metrics/daily': typeof ApiPublicMetricsDailyRoute
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
+  '/api/public/webhooks/clint-dashboards': typeof ApiPublicWebhooksClintDashboardsRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRouteTypes {
@@ -199,6 +218,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/daily'
     | '/dashboard'
+    | '/desempenho'
     | '/disc'
     | '/equipe'
     | '/fechamento'
@@ -209,6 +229,7 @@ export interface FileRouteTypes {
     | '/renovacoes'
     | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
+    | '/api/public/webhooks/clint-dashboards'
     | '/api/public/webhooks/hotmart'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -219,6 +240,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/daily'
     | '/dashboard'
+    | '/desempenho'
     | '/disc'
     | '/equipe'
     | '/fechamento'
@@ -229,6 +251,7 @@ export interface FileRouteTypes {
     | '/renovacoes'
     | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
+    | '/api/public/webhooks/clint-dashboards'
     | '/api/public/webhooks/hotmart'
   id:
     | '__root__'
@@ -240,6 +263,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm'
     | '/_authenticated/daily'
     | '/_authenticated/dashboard'
+    | '/_authenticated/desempenho'
     | '/_authenticated/disc'
     | '/_authenticated/equipe'
     | '/_authenticated/fechamento'
@@ -250,6 +274,7 @@ export interface FileRouteTypes {
     | '/_authenticated/renovacoes'
     | '/api/public/metrics/daily'
     | '/api/public/webhooks/clint'
+    | '/api/public/webhooks/clint-dashboards'
     | '/api/public/webhooks/hotmart'
   fileRoutesById: FileRoutesById
 }
@@ -259,6 +284,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiPublicMetricsDailyRoute: typeof ApiPublicMetricsDailyRoute
   ApiPublicWebhooksClintRoute: typeof ApiPublicWebhooksClintRoute
+  ApiPublicWebhooksClintDashboardsRoute: typeof ApiPublicWebhooksClintDashboardsRoute
   ApiPublicWebhooksHotmartRoute: typeof ApiPublicWebhooksHotmartRoute
 }
 
@@ -341,6 +367,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDiscRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/desempenho': {
+      id: '/_authenticated/desempenho'
+      path: '/desempenho'
+      fullPath: '/desempenho'
+      preLoaderRoute: typeof AuthenticatedDesempenhoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -383,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksHotmartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/clint-dashboards': {
+      id: '/api/public/webhooks/clint-dashboards'
+      path: '/api/public/webhooks/clint-dashboards'
+      fullPath: '/api/public/webhooks/clint-dashboards'
+      preLoaderRoute: typeof ApiPublicWebhooksClintDashboardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/clint': {
       id: '/api/public/webhooks/clint'
       path: '/api/public/webhooks/clint'
@@ -406,6 +446,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDailyRoute: typeof AuthenticatedDailyRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDesempenhoRoute: typeof AuthenticatedDesempenhoRoute
   AuthenticatedDiscRoute: typeof AuthenticatedDiscRoute
   AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
   AuthenticatedFechamentoRoute: typeof AuthenticatedFechamentoRoute
@@ -422,6 +463,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDailyRoute: AuthenticatedDailyRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDesempenhoRoute: AuthenticatedDesempenhoRoute,
   AuthenticatedDiscRoute: AuthenticatedDiscRoute,
   AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,
   AuthenticatedFechamentoRoute: AuthenticatedFechamentoRoute,
@@ -441,8 +483,19 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiPublicMetricsDailyRoute: ApiPublicMetricsDailyRoute,
   ApiPublicWebhooksClintRoute: ApiPublicWebhooksClintRoute,
+  ApiPublicWebhooksClintDashboardsRoute: ApiPublicWebhooksClintDashboardsRoute,
   ApiPublicWebhooksHotmartRoute: ApiPublicWebhooksHotmartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
