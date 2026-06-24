@@ -4,18 +4,23 @@ import { Topbar } from "@/components/topbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { generateDailySummary, getLatestSummary } from "@/lib/ai.functions";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
+import { useFormatCurrency } from "@/components/currency-provider";
 import { Copy, FileText, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/daily")({ component: DailyPage });
 
 function DailyPage() {
+  const fmt = useFormatCurrency();
   const qc = useQueryClient();
   const { data: summary } = useQuery({ queryKey: ["summary"], queryFn: () => getLatestSummary() });
   const m = useMutation({
     mutationFn: () => generateDailySummary({}),
-    onSuccess: () => { toast.success("Daily gerada"); qc.invalidateQueries({ queryKey: ["summary"] }); },
+    onSuccess: () => {
+      toast.success("Daily gerada");
+      qc.invalidateQueries({ queryKey: ["summary"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -23,9 +28,9 @@ function DailyPage() {
     if (!summary) return;
     const txt = `📊 *Daily LLMídia — ${summary.data}*
 
-💰 Receita ontem: ${formatCurrency(summary.receita)}
-🎯 Meta diária: ${formatCurrency(summary.meta_diaria)}
-📉 Gap: ${formatCurrency(summary.gap)}
+💰 Receita ontem: ${fmt(summary.receita)}
+🎯 Meta diária: ${fmt(summary.meta_diaria)}
+📉 Gap: ${fmt(summary.gap)}
 🔄 Conversão: ${formatPercent(summary.conversao)}
 🏆 Melhor vendedor: ${summary.melhor_vendedor}
 
@@ -35,21 +40,30 @@ function DailyPage() {
     toast.success("Copiado para WhatsApp");
   }
 
-  function printPdf() { window.print(); }
+  function printPdf() {
+    window.print();
+  }
 
   return (
     <>
-      <Topbar title="Daily Executiva" subtitle="Resumo automático para liderança" />
+      <Topbar
+        title="Daily Executiva"
+        subtitle="Resumo automático para liderança"
+        showCurrencyToggle
+      />
       <main className="space-y-6 p-4 md:p-6">
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-base">Gerar daily de hoje</CardTitle>
-                <CardDescription>Consolida resultados de ontem com plano de ação por IA</CardDescription>
+                <CardDescription>
+                  Consolida resultados de ontem com plano de ação por IA
+                </CardDescription>
               </div>
               <Button onClick={() => m.mutate()} disabled={m.isPending}>
-                <Sparkles className="mr-2 h-4 w-4" />{m.isPending ? "Gerando..." : "Gerar daily"}
+                <Sparkles className="mr-2 h-4 w-4" />
+                {m.isPending ? "Gerando..." : "Gerar daily"}
               </Button>
             </div>
           </CardHeader>
@@ -63,9 +77,13 @@ function DailyPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Stat label="Receita Ontem" value={formatCurrency(summary.receita)} />
-                <Stat label="Meta Diária" value={formatCurrency(summary.meta_diaria)} />
-                <Stat label="Gap" value={formatCurrency(summary.gap)} accent={summary.gap > 0 ? "text-destructive" : "text-success"} />
+                <Stat label="Receita Ontem" value={fmt(summary.receita)} />
+                <Stat label="Meta Diária" value={fmt(summary.meta_diaria)} />
+                <Stat
+                  label="Gap"
+                  value={fmt(summary.gap)}
+                  accent={summary.gap > 0 ? "text-destructive" : "text-success"}
+                />
                 <Stat label="Conversão" value={formatPercent(summary.conversao)} />
               </div>
               <div className="grid gap-3 md:grid-cols-3">
@@ -76,19 +94,28 @@ function DailyPage() {
               {summary.resumo_ia && (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
-                    <Sparkles className="h-3.5 w-3.5" />Resumo IA
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Resumo IA
                   </div>
                   <p className="whitespace-pre-wrap text-sm">{summary.resumo_ia}</p>
                 </div>
               )}
               <div className="flex flex-wrap gap-2 print:hidden">
-                <Button variant="outline" onClick={printPdf}><FileText className="mr-2 h-4 w-4" />Gerar PDF</Button>
-                <Button variant="outline" onClick={copyWhats}><Copy className="mr-2 h-4 w-4" />Copiar para WhatsApp</Button>
+                <Button variant="outline" onClick={printPdf}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Gerar PDF
+                </Button>
+                <Button variant="outline" onClick={copyWhats}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copiar para WhatsApp
+                </Button>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <p className="text-sm text-muted-foreground">Nenhuma daily gerada ainda. Clique em "Gerar daily".</p>
+          <p className="text-sm text-muted-foreground">
+            Nenhuma daily gerada ainda. Clique em "Gerar daily".
+          </p>
         )}
       </main>
     </>

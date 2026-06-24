@@ -17,14 +17,8 @@ import {
 } from "@/components/ui/table";
 import { listSales, getVendasPorProduto, getVendasMensaisPorProduto } from "@/lib/data.functions";
 import { getDashboardMetrics } from "@/lib/dashboard.functions";
-import {
-  formatCurrency,
-  formatNumber,
-  formatPercent,
-  shortDate,
-  monthLabel,
-  todayISO,
-} from "@/lib/format";
+import { formatNumber, formatPercent, shortDate, monthLabel, todayISO } from "@/lib/format";
+import { useFormatCurrency } from "@/components/currency-provider";
 import { Database, Webhook, Package, CalendarRange } from "lucide-react";
 import { HotmartCsvImport } from "@/components/hotmart-csv-import";
 import { DuplicateSalesReview } from "@/components/duplicate-sales-review";
@@ -36,6 +30,7 @@ function inicioDoAno() {
 }
 
 function CrmPage() {
+  const fmt = useFormatCurrency();
   const [dataInicio, setDataInicio] = useState(inicioDoAno());
   const [dataFim, setDataFim] = useState(todayISO());
   const [mes, setMes] = useState("");
@@ -80,7 +75,11 @@ function CrmPage() {
 
   return (
     <>
-      <Topbar title="CRM Performance" subtitle="Vendas, conversão e fontes (Hotmart + Clint)" />
+      <Topbar
+        title="CRM Performance"
+        subtitle="Vendas, conversão e fontes (Hotmart + Clint)"
+        showCurrencyToggle
+      />
       <main className="space-y-6 p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-end gap-2">
           <HotmartCsvImport />
@@ -110,7 +109,7 @@ function CrmPage() {
                 <CardDescription className="uppercase text-xs">{k}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(v)}</div>
+                <div className="text-2xl font-bold">{fmt(v)}</div>
               </CardContent>
             </Card>
           ))}
@@ -202,12 +201,12 @@ function CrmPage() {
                       const cell = (v.produtos as any)[p];
                       return (
                         <TableCell key={p} className="text-right text-xs">
-                          {cell ? `${cell.vendas} · ${formatCurrency(cell.valor)}` : "—"}
+                          {cell ? `${cell.vendas} · ${fmt(cell.valor)}` : "—"}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-right text-xs font-semibold">
-                      {v.totalVendas} · {formatCurrency(v.totalValor)}
+                      {v.totalVendas} · {fmt(v.totalValor)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -247,12 +246,12 @@ function CrmPage() {
                       const cell = (p.meses as any)[m];
                       return (
                         <TableCell key={m} className="text-right text-xs whitespace-nowrap">
-                          {cell ? `${cell.vendas} · ${formatCurrency(cell.valor)}` : "—"}
+                          {cell ? `${cell.vendas} · ${fmt(cell.valor)}` : "—"}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-right text-xs font-semibold whitespace-nowrap">
-                      {p.totalVendas} · {formatCurrency(p.totalValor)}
+                      {p.totalVendas} · {fmt(p.totalValor)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -292,9 +291,7 @@ function CrmPage() {
                         {s.fonte}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right text-xs font-medium">
-                      {formatCurrency(s.valor)}
-                    </TableCell>
+                    <TableCell className="text-right text-xs font-medium">{fmt(s.valor)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

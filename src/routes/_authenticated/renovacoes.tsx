@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Topbar } from "@/components/topbar";
+import { useFormatCurrency } from "@/components/currency-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -153,15 +154,8 @@ const TATICA_COLOR: Record<string, string> = {
   "Escuta ativa": "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
 };
 
-function fmtEUR(v: number) {
-  return new Intl.NumberFormat("pt-PT", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(v);
-}
-
 function RenovacoesPage() {
+  const fmtEUR = useFormatCurrency();
   const queryClient = useQueryClient();
   const [filtro, setFiltro] = useState<"Todas" | Stage>("Todas");
   const [showConfig, setShowConfig] = useState(false);
@@ -206,6 +200,7 @@ function RenovacoesPage() {
       <Topbar
         title="Renovações"
         subtitle="Radar automático D-45 → D-0 · baseado nas vendas reais da Clint"
+        showCurrencyToggle
       />
       <main className="space-y-6 p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-end gap-2">

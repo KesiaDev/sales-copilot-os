@@ -23,9 +23,10 @@ import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { parseHotmartCsv, type ParsedRow } from "@/lib/hotmart-csv";
 import { importHotmartCsv } from "@/lib/import.functions";
-import { formatCurrency } from "@/lib/format";
+import { useFormatCurrency } from "@/components/currency-provider";
 
 export function HotmartCsvImport() {
+  const formatCurrency = useFormatCurrency();
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);

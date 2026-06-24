@@ -25,7 +25,8 @@ import {
 import { AlertTriangle, Trash2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { listPossibleDuplicates, resolveDuplicate } from "@/lib/data.functions";
-import { formatCurrency, shortDate } from "@/lib/format";
+import { shortDate } from "@/lib/format";
+import { useFormatCurrency } from "@/components/currency-provider";
 
 // Supabase tipa o embed do FK auto-referenciado (duplicate_of -> sales.id) como array
 // por causa de ambiguidade de direcao no codegen para self-joins; no runtime o PostgREST
@@ -46,6 +47,7 @@ type DuplicateSaleRow = {
 };
 
 export function DuplicateSalesReview() {
+  const formatCurrency = useFormatCurrency();
   const qc = useQueryClient();
   const resolveFn = useServerFn(resolveDuplicate);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);

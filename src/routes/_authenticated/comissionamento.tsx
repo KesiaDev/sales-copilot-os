@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Topbar } from "@/components/topbar";
+import { useFormatCurrency } from "@/components/currency-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,18 +10,31 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Copy, Save, Trash2, Plus, Sparkles, Printer, Settings,
-} from "lucide-react";
+import { Copy, Save, Trash2, Plus, Sparkles, Printer, Settings } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/comissionamento")({
   component: ComissionamentoPage,
@@ -50,11 +64,12 @@ function prevMonth(key: string) {
   const d = new Date(y, m - 2, 1);
   return monthKey(d);
 }
-function fmtEUR(n: number) {
-  return n.toLocaleString("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
-}
 function fmtBRL(n: number) {
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
+  return n.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 2,
+  });
 }
 
 function MonthPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -74,7 +89,11 @@ function ComissionamentoPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <Topbar title="Comissionamento" subtitle="Taxas, lançamentos, roleta e relatório mensal" />
+      <Topbar
+        title="Comissionamento"
+        subtitle="Taxas, lançamentos, roleta e relatório mensal"
+        showCurrencyToggle
+      />
       <main className="flex-1 space-y-6 p-4 md:p-6 print:p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
           <div className="flex items-center gap-2">
@@ -91,10 +110,18 @@ function ComissionamentoPage() {
             <TabsTrigger value="relatorio">Relatório Mensal</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="taxas"><TaxasTab month={month} /></TabsContent>
-          <TabsContent value="manuais"><ManuaisTab month={month} /></TabsContent>
-          <TabsContent value="roleta"><RoletaTab month={month} /></TabsContent>
-          <TabsContent value="relatorio"><RelatorioTab month={month} /></TabsContent>
+          <TabsContent value="taxas">
+            <TaxasTab month={month} />
+          </TabsContent>
+          <TabsContent value="manuais">
+            <ManuaisTab month={month} />
+          </TabsContent>
+          <TabsContent value="roleta">
+            <RoletaTab month={month} />
+          </TabsContent>
+          <TabsContent value="relatorio">
+            <RelatorioTab month={month} />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -135,7 +162,9 @@ function TaxasTab({ month }: { month: string }) {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, [month]);
+  useEffect(() => {
+    load();
+  }, [month]);
 
   function setCell(pid: string, prod: string, v: string) {
     setRates((prev) => ({ ...prev, [pid]: { ...(prev[pid] ?? {}), [prod]: v } }));
@@ -150,7 +179,12 @@ function TaxasTab({ month }: { month: string }) {
         if (v === undefined || v === "") continue;
         const num = Number(v.replace(",", "."));
         if (Number.isNaN(num)) continue;
-        rows.push({ profile_id: p.id, produto_grupo: prod, percentual: num, vigente_desde: vigente });
+        rows.push({
+          profile_id: p.id,
+          produto_grupo: prod,
+          percentual: num,
+          vigente_desde: vigente,
+        });
       }
     }
     if (!rows.length) return toast.error("Nada para salvar");
@@ -204,7 +238,9 @@ function TaxasTab({ month }: { month: string }) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[220px]">Vendedor</TableHead>
-                  {PRODUTOS.map((p) => <TableHead key={p}>{p}</TableHead>)}
+                  {PRODUTOS.map((p) => (
+                    <TableHead key={p}>{p}</TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -221,7 +257,9 @@ function TaxasTab({ month }: { month: string }) {
                             onChange={(e) => setCell(p.id, prod, e.target.value)}
                             className="pr-7"
                           />
-                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                            %
+                          </span>
                         </div>
                       </TableCell>
                     ))}
@@ -238,6 +276,7 @@ function TaxasTab({ month }: { month: string }) {
 
 // ------------------ LANÇAMENTOS MANUAIS ------------------
 function ManuaisTab({ month }: { month: string }) {
+  const fmtEUR = useFormatCurrency(2);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [rows, setRows] = useState<any[]>([]);
   const [filterMonth, setFilterMonth] = useState(month);
@@ -250,22 +289,35 @@ function ManuaisTab({ month }: { month: string }) {
     mes_referencia: month,
   });
 
-  useEffect(() => { setFilterMonth(month); setForm((f) => ({ ...f, mes_referencia: month })); }, [month]);
+  useEffect(() => {
+    setFilterMonth(month);
+    setForm((f) => ({ ...f, mes_referencia: month }));
+  }, [month]);
 
   async function loadProfiles() {
-    const { data } = await db.from("profiles").select("id, full_name, ativo").eq("ativo", true).order("full_name");
+    const { data } = await db
+      .from("profiles")
+      .select("id, full_name, ativo")
+      .eq("ativo", true)
+      .order("full_name");
     setProfiles(data ?? []);
   }
   async function loadRows() {
     const { data } = await db
       .from("manual_revenue_entries")
-      .select("id, profile_id, valor, produto_grupo, motivo, data_venda, mes_referencia, created_at")
+      .select(
+        "id, profile_id, valor, produto_grupo, motivo, data_venda, mes_referencia, created_at",
+      )
       .eq("mes_referencia", filterMonth)
       .order("data_venda", { ascending: false });
     setRows(data ?? []);
   }
-  useEffect(() => { loadProfiles(); }, []);
-  useEffect(() => { loadRows(); }, [filterMonth]);
+  useEffect(() => {
+    loadProfiles();
+  }, []);
+  useEffect(() => {
+    loadRows();
+  }, [filterMonth]);
 
   async function submit() {
     if (!form.profile_id) return toast.error("Selecione um vendedor");
@@ -304,46 +356,85 @@ function ManuaisTab({ month }: { month: string }) {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader><CardTitle>Novo lançamento</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Novo lançamento</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3">
             <div>
               <Label className="mb-1 block text-xs">Vendedor</Label>
-              <Select value={form.profile_id} onValueChange={(v) => setForm({ ...form, profile_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+              <Select
+                value={form.profile_id}
+                onValueChange={(v) => setForm({ ...form, profile_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione…" />
+                </SelectTrigger>
                 <SelectContent>
-                  {profiles.map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}
+                  {profiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.full_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label className="mb-1 block text-xs">Produto</Label>
-              <Select value={form.produto_grupo} onValueChange={(v) => setForm({ ...form, produto_grupo: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.produto_grupo}
+                onValueChange={(v) => setForm({ ...form, produto_grupo: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {PRODUTOS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  {PRODUTOS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label className="mb-1 block text-xs">Valor (€)</Label>
-              <Input inputMode="decimal" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="0,00" />
+              <Input
+                inputMode="decimal"
+                value={form.valor}
+                onChange={(e) => setForm({ ...form, valor: e.target.value })}
+                placeholder="0,00"
+              />
             </div>
             <div>
               <Label className="mb-1 block text-xs">Data da venda</Label>
-              <Input type="date" value={form.data_venda} onChange={(e) => setForm({ ...form, data_venda: e.target.value })} />
+              <Input
+                type="date"
+                value={form.data_venda}
+                onChange={(e) => setForm({ ...form, data_venda: e.target.value })}
+              />
             </div>
             <div>
               <Label className="mb-1 block text-xs">Mês de referência</Label>
-              <Input type="month" value={form.mes_referencia} onChange={(e) => setForm({ ...form, mes_referencia: e.target.value })} />
+              <Input
+                type="month"
+                value={form.mes_referencia}
+                onChange={(e) => setForm({ ...form, mes_referencia: e.target.value })}
+              />
             </div>
             <div className="md:col-span-3">
               <Label className="mb-1 block text-xs">Motivo (opcional)</Label>
-              <Textarea rows={2} value={form.motivo} onChange={(e) => setForm({ ...form, motivo: e.target.value })} />
+              <Textarea
+                rows={2}
+                value={form.motivo}
+                onChange={(e) => setForm({ ...form, motivo: e.target.value })}
+              />
             </div>
           </div>
           <div className="mt-4 flex justify-end">
-            <Button onClick={submit}><Plus className="mr-2 h-4 w-4" /> Registrar lançamento</Button>
+            <Button onClick={submit}>
+              <Plus className="mr-2 h-4 w-4" /> Registrar lançamento
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -353,7 +444,12 @@ function ManuaisTab({ month }: { month: string }) {
           <CardTitle>Lançamentos</CardTitle>
           <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground">Filtrar mês</Label>
-            <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-[180px]" />
+            <Input
+              type="month"
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="w-[180px]"
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -371,7 +467,11 @@ function ManuaisTab({ month }: { month: string }) {
             </TableHeader>
             <TableBody>
               {rows.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Sem lançamentos neste mês</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
+                    Sem lançamentos neste mês
+                  </TableCell>
+                </TableRow>
               )}
               {rows.map((r, i) => (
                 <TableRow key={r.id} className={i % 2 ? "bg-muted/20" : ""}>
@@ -379,7 +479,9 @@ function ManuaisTab({ month }: { month: string }) {
                   <TableCell>{profById[r.profile_id] ?? "—"}</TableCell>
                   <TableCell>{r.produto_grupo}</TableCell>
                   <TableCell className="font-medium">{fmtEUR(Number(r.valor))}</TableCell>
-                  <TableCell className="max-w-[300px] truncate text-muted-foreground">{r.motivo ?? "—"}</TableCell>
+                  <TableCell className="max-w-[300px] truncate text-muted-foreground">
+                    {r.motivo ?? "—"}
+                  </TableCell>
                   <TableCell>{r.mes_referencia}</TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => remove(r.id)}>
@@ -402,6 +504,7 @@ function ManuaisTab({ month }: { month: string }) {
 
 // ------------------ ROLETA ------------------
 function RoletaTab({ month }: { month: string }) {
+  const fmtEUR = useFormatCurrency(2);
   const [prizes, setPrizes] = useState<any[]>([]);
   const [config, setConfig] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -412,7 +515,10 @@ function RoletaTab({ month }: { month: string }) {
   const [spinDisplay, setSpinDisplay] = useState<string>("");
   const [newPrize, setNewPrize] = useState({ nome: "", valor: "", tipo: "monetario", peso: "1" });
 
-  useEffect(() => { setFilterMonth(month); setSpinForm((f) => ({ ...f, mes_referencia: month })); }, [month]);
+  useEffect(() => {
+    setFilterMonth(month);
+    setSpinForm((f) => ({ ...f, mes_referencia: month }));
+  }, [month]);
 
   async function loadAll() {
     const [pz, cf, pr] = await Promise.all([
@@ -432,8 +538,12 @@ function RoletaTab({ month }: { month: string }) {
       .order("created_at", { ascending: false });
     setSpins(data ?? []);
   }
-  useEffect(() => { loadAll(); }, []);
-  useEffect(() => { loadSpins(); }, [filterMonth]);
+  useEffect(() => {
+    loadAll();
+  }, []);
+  useEffect(() => {
+    loadSpins();
+  }, [filterMonth]);
 
   async function addPrize() {
     if (!newPrize.nome) return toast.error("Nome obrigatório");
@@ -457,7 +567,9 @@ function RoletaTab({ month }: { month: string }) {
     loadAll();
   }
   async function toggleProduto(produto: string, elegivel: boolean) {
-    await db.from("roleta_config").upsert({ produto_grupo: produto, elegivel, updated_at: new Date().toISOString() });
+    await db
+      .from("roleta_config")
+      .upsert({ produto_grupo: produto, elegivel, updated_at: new Date().toISOString() });
     loadAll();
   }
 
@@ -502,7 +614,9 @@ function RoletaTab({ month }: { month: string }) {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader><CardTitle>Prêmios da roleta</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Prêmios da roleta</CardTitle>
+        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -519,14 +633,33 @@ function RoletaTab({ month }: { month: string }) {
               {prizes.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
-                    <Input defaultValue={p.nome} onBlur={(e) => e.target.value !== p.nome && updatePrize(p.id, { nome: e.target.value })} />
+                    <Input
+                      defaultValue={p.nome}
+                      onBlur={(e) =>
+                        e.target.value !== p.nome && updatePrize(p.id, { nome: e.target.value })
+                      }
+                    />
                   </TableCell>
                   <TableCell>
-                    <Input inputMode="decimal" defaultValue={p.valor ?? ""} onBlur={(e) => updatePrize(p.id, { valor: e.target.value ? Number(e.target.value.replace(",", ".")) : null })} className="w-28" />
+                    <Input
+                      inputMode="decimal"
+                      defaultValue={p.valor ?? ""}
+                      onBlur={(e) =>
+                        updatePrize(p.id, {
+                          valor: e.target.value ? Number(e.target.value.replace(",", ".")) : null,
+                        })
+                      }
+                      className="w-28"
+                    />
                   </TableCell>
                   <TableCell>
-                    <Select defaultValue={p.tipo} onValueChange={(v) => updatePrize(p.id, { tipo: v })}>
-                      <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                    <Select
+                      defaultValue={p.tipo}
+                      onValueChange={(v) => updatePrize(p.id, { tipo: v })}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="monetario">Monetário</SelectItem>
                         <SelectItem value="beneficio">Benefício</SelectItem>
@@ -534,10 +667,21 @@ function RoletaTab({ month }: { month: string }) {
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <Input type="number" min={1} defaultValue={p.peso} onBlur={(e) => updatePrize(p.id, { peso: Math.max(1, Number(e.target.value) || 1) })} className="w-20" />
+                    <Input
+                      type="number"
+                      min={1}
+                      defaultValue={p.peso}
+                      onBlur={(e) =>
+                        updatePrize(p.id, { peso: Math.max(1, Number(e.target.value) || 1) })
+                      }
+                      className="w-20"
+                    />
                   </TableCell>
                   <TableCell>
-                    <Switch checked={p.ativo} onCheckedChange={(v) => updatePrize(p.id, { ativo: v })} />
+                    <Switch
+                      checked={p.ativo}
+                      onCheckedChange={(v) => updatePrize(p.id, { ativo: v })}
+                    />
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => delPrize(p.id)}>
@@ -547,39 +691,78 @@ function RoletaTab({ month }: { month: string }) {
                 </TableRow>
               ))}
               <TableRow className="bg-muted/30">
-                <TableCell><Input placeholder="Novo prêmio" value={newPrize.nome} onChange={(e) => setNewPrize({ ...newPrize, nome: e.target.value })} /></TableCell>
-                <TableCell><Input placeholder="opcional" value={newPrize.valor} onChange={(e) => setNewPrize({ ...newPrize, valor: e.target.value })} className="w-28" /></TableCell>
                 <TableCell>
-                  <Select value={newPrize.tipo} onValueChange={(v) => setNewPrize({ ...newPrize, tipo: v })}>
-                    <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                  <Input
+                    placeholder="Novo prêmio"
+                    value={newPrize.nome}
+                    onChange={(e) => setNewPrize({ ...newPrize, nome: e.target.value })}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    placeholder="opcional"
+                    value={newPrize.valor}
+                    onChange={(e) => setNewPrize({ ...newPrize, valor: e.target.value })}
+                    className="w-28"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={newPrize.tipo}
+                    onValueChange={(v) => setNewPrize({ ...newPrize, tipo: v })}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="monetario">Monetário</SelectItem>
                       <SelectItem value="beneficio">Benefício</SelectItem>
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell><Input type="number" min={1} value={newPrize.peso} onChange={(e) => setNewPrize({ ...newPrize, peso: e.target.value })} className="w-20" /></TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={newPrize.peso}
+                    onChange={(e) => setNewPrize({ ...newPrize, peso: e.target.value })}
+                    className="w-20"
+                  />
+                </TableCell>
                 <TableCell></TableCell>
-                <TableCell><Button size="sm" onClick={addPrize}><Plus className="h-4 w-4" /></Button></TableCell>
+                <TableCell>
+                  <Button size="sm" onClick={addPrize}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
             </TableBody>
           </Table>
-          <p className="mt-3 text-xs text-muted-foreground">Peso define a probabilidade: peso 3 é 3× mais provável que peso 1.</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Peso define a probabilidade: peso 3 é 3× mais provável que peso 1.
+          </p>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Produtos com Roleta</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Produtos com Roleta</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {PRODUTOS.map((prod) => {
               const cfg = config.find((c) => c.produto_grupo === prod);
               const elegivel = cfg?.elegivel ?? false;
               return (
-                <div key={prod} className="flex items-center justify-between rounded-md border border-border bg-muted/10 p-3">
+                <div
+                  key={prod}
+                  className="flex items-center justify-between rounded-md border border-border bg-muted/10 p-3"
+                >
                   <div>
                     <p className="text-sm font-medium">{prod}</p>
-                    <p className="text-xs text-muted-foreground">Vendas deste produto habilitam giro de roleta?</p>
+                    <p className="text-xs text-muted-foreground">
+                      Vendas deste produto habilitam giro de roleta?
+                    </p>
                   </div>
                   <Switch checked={elegivel} onCheckedChange={(v) => toggleProduto(prod, v)} />
                 </div>
@@ -590,21 +773,36 @@ function RoletaTab({ month }: { month: string }) {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Registrar giro manual</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Registrar giro manual</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3">
             <div>
               <Label className="mb-1 block text-xs">Vendedor</Label>
-              <Select value={spinForm.profile_id} onValueChange={(v) => setSpinForm({ ...spinForm, profile_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+              <Select
+                value={spinForm.profile_id}
+                onValueChange={(v) => setSpinForm({ ...spinForm, profile_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione…" />
+                </SelectTrigger>
                 <SelectContent>
-                  {profiles.map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}
+                  {profiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.full_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label className="mb-1 block text-xs">Mês de referência</Label>
-              <Input type="month" value={spinForm.mes_referencia} onChange={(e) => setSpinForm({ ...spinForm, mes_referencia: e.target.value })} />
+              <Input
+                type="month"
+                value={spinForm.mes_referencia}
+                onChange={(e) => setSpinForm({ ...spinForm, mes_referencia: e.target.value })}
+              />
             </div>
             <div className="flex items-end">
               <Button onClick={sortear} disabled={spinning} className="w-full">
@@ -615,7 +813,9 @@ function RoletaTab({ month }: { month: string }) {
           </div>
           {spinDisplay && (
             <div className="mt-4 flex justify-center">
-              <Badge className={`px-6 py-3 text-lg ${spinning ? "animate-pulse" : ""} bg-amber-500/20 text-amber-300 border border-amber-500/40`}>
+              <Badge
+                className={`px-6 py-3 text-lg ${spinning ? "animate-pulse" : ""} bg-amber-500/20 text-amber-300 border border-amber-500/40`}
+              >
                 🎰 {spinDisplay}
               </Badge>
             </div>
@@ -624,7 +824,12 @@ function RoletaTab({ month }: { month: string }) {
           <div className="mt-6">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-semibold">Histórico</h3>
-              <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-[180px]" />
+              <Input
+                type="month"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="w-[180px]"
+              />
             </div>
             <Table>
               <TableHeader>
@@ -639,16 +844,28 @@ function RoletaTab({ month }: { month: string }) {
               </TableHeader>
               <TableBody>
                 {spins.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Nenhum giro neste mês</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                      Nenhum giro neste mês
+                    </TableCell>
+                  </TableRow>
                 )}
                 {spins.map((s, i) => (
                   <TableRow key={s.id} className={i % 2 ? "bg-muted/20" : ""}>
                     <TableCell>{s.mes_referencia}</TableCell>
                     <TableCell>{profById[s.profile_id] ?? "—"}</TableCell>
-                    <TableCell><Badge className="bg-amber-500/15 text-amber-300 border-amber-500/30">{s.premio_nome}</Badge></TableCell>
+                    <TableCell>
+                      <Badge className="bg-amber-500/15 text-amber-300 border-amber-500/30">
+                        {s.premio_nome}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{s.premio_valor ? fmtEUR(Number(s.premio_valor)) : "—"}</TableCell>
-                    <TableCell><Switch checked={s.pago} onCheckedChange={(v) => togglePago(s.id, v)} /></TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell>
+                      <Switch checked={s.pago} onCheckedChange={(v) => togglePago(s.id, v)} />
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {new Date(s.created_at).toLocaleDateString("pt-BR")}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -662,6 +879,7 @@ function RoletaTab({ month }: { month: string }) {
 
 // ------------------ RELATÓRIO MENSAL ------------------
 function RelatorioTab({ month }: { month: string }) {
+  const fmtEUR = useFormatCurrency(2);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [rates, setRates] = useState<any[]>([]);
   const [sales, setSales] = useState<any[]>([]);
@@ -680,12 +898,33 @@ function RelatorioTab({ month }: { month: string }) {
   async function loadAll() {
     const [pr, rt, sl, mn, sp, bn, mg] = await Promise.all([
       db.from("profiles").select("id, full_name, ativo").eq("ativo", true).order("full_name"),
-      db.from("commission_rates").select("*").lte("vigente_desde", startDate).order("vigente_desde", { ascending: false }),
-      db.from("sales").select("profile_id, produto_grupo, valor, moeda, vendido_em").gte("vendido_em", startDate).lt("vendido_em", endDate),
-      db.from("manual_revenue_entries").select("profile_id, produto_grupo, valor").eq("mes_referencia", month),
+      db
+        .from("commission_rates")
+        .select("*")
+        .lte("vigente_desde", startDate)
+        .order("vigente_desde", { ascending: false }),
+      db
+        .from("sales")
+        .select("profile_id, produto_grupo, valor, moeda, vendido_em")
+        .gte("vendido_em", startDate)
+        .lt("vendido_em", endDate),
+      db
+        .from("manual_revenue_entries")
+        .select("profile_id, produto_grupo, valor")
+        .eq("mes_referencia", month),
       db.from("roleta_spins").select("*").eq("mes_referencia", month),
-      db.from("weekly_bonus_config").select("*").lte("vigente_desde", startDate).order("vigente_desde", { ascending: false }),
-      db.from("manager_commission_config").select("*").lte("vigente_desde", startDate).order("vigente_desde", { ascending: false }).limit(1).maybeSingle(),
+      db
+        .from("weekly_bonus_config")
+        .select("*")
+        .lte("vigente_desde", startDate)
+        .order("vigente_desde", { ascending: false }),
+      db
+        .from("manager_commission_config")
+        .select("*")
+        .lte("vigente_desde", startDate)
+        .order("vigente_desde", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
     setProfiles(pr.data ?? []);
     setRates(rt.data ?? []);
@@ -694,9 +933,15 @@ function RelatorioTab({ month }: { month: string }) {
     setSpins(sp.data ?? []);
     setBonus(bn.data ?? []);
     setMgrCfg(mg.data);
-    if (mg.data) setMgrForm({ percentual: String(mg.data.percentual_sobre_equipe), salario: String(mg.data.salario_fixo_brl) });
+    if (mg.data)
+      setMgrForm({
+        percentual: String(mg.data.percentual_sobre_equipe),
+        salario: String(mg.data.salario_fixo_brl),
+      });
   }
-  useEffect(() => { loadAll(); }, [month]);
+  useEffect(() => {
+    loadAll();
+  }, [month]);
 
   // helpers
   function rateFor(pid: string, prod: string): number {
@@ -750,7 +995,7 @@ function RelatorioTab({ month }: { month: string }) {
             .reduce((sum, s) => sum + Number(s.valor ?? 0), 0);
           const fat = fatSales + fatMan;
           const pct = rateFor(p.id, prod);
-          return { produto: prod, fat, pct, com: fat * pct / 100 };
+          return { produto: prod, fat, pct, com: (fat * pct) / 100 };
         });
         const comissaoTotal = byProduto.reduce((s, x) => s + x.com, 0);
 
@@ -787,17 +1032,21 @@ function RelatorioTab({ month }: { month: string }) {
   const nadal = profiles.find((p) => p.full_name === GESTOR_NOME);
   const pctEquipe = mgrCfg ? Number(mgrCfg.percentual_sobre_equipe) : 5;
   const salarioFixo = mgrCfg ? Number(mgrCfg.salario_fixo_brl) : 3200;
-  const comissaoEquipe = sellers.reduce((s, x) => s + (x.comissaoTotal * pctEquipe / 100), 0);
+  const comissaoEquipe = sellers.reduce((s, x) => s + (x.comissaoTotal * pctEquipe) / 100, 0);
   const nadalSales = nadal
-    ? sales.filter((s) => s.profile_id === nadal.id).reduce((s, x) => s + Number(x.valor ?? 0), 0)
-      + manuais.filter((s) => s.profile_id === nadal.id).reduce((s, x) => s + Number(x.valor ?? 0), 0)
+    ? sales.filter((s) => s.profile_id === nadal.id).reduce((s, x) => s + Number(x.valor ?? 0), 0) +
+      manuais.filter((s) => s.profile_id === nadal.id).reduce((s, x) => s + Number(x.valor ?? 0), 0)
     : 0;
   // assume Nadal commission on own sales uses commission_rates as well — average? we'll sum by product
   const nadalComissaoPropria = nadal
     ? PRODUTOS.reduce((sum, prod) => {
-        const fatS = sales.filter((s) => s.profile_id === nadal.id && s.produto_grupo === prod).reduce((a, b) => a + Number(b.valor ?? 0), 0);
-        const fatM = manuais.filter((s) => s.profile_id === nadal.id && s.produto_grupo === prod).reduce((a, b) => a + Number(b.valor ?? 0), 0);
-        return sum + (fatS + fatM) * rateFor(nadal.id, prod) / 100;
+        const fatS = sales
+          .filter((s) => s.profile_id === nadal.id && s.produto_grupo === prod)
+          .reduce((a, b) => a + Number(b.valor ?? 0), 0);
+        const fatM = manuais
+          .filter((s) => s.profile_id === nadal.id && s.produto_grupo === prod)
+          .reduce((a, b) => a + Number(b.valor ?? 0), 0);
+        return sum + ((fatS + fatM) * rateFor(nadal.id, prod)) / 100;
       }, 0)
     : 0;
 
@@ -829,26 +1078,48 @@ function RelatorioTab({ month }: { month: string }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Configuração do gestor — {GESTOR_NOME}</CardTitle>
-          {!mgrEdit && <Button size="sm" variant="ghost" onClick={() => setMgrEdit(true)}>Editar</Button>}
+          {!mgrEdit && (
+            <Button size="sm" variant="ghost" onClick={() => setMgrEdit(true)}>
+              Editar
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {mgrEdit ? (
             <div className="flex flex-wrap items-end gap-3">
               <div>
                 <Label className="text-xs">Salário fixo (R$)</Label>
-                <Input value={mgrForm.salario} onChange={(e) => setMgrForm({ ...mgrForm, salario: e.target.value })} className="w-40" />
+                <Input
+                  value={mgrForm.salario}
+                  onChange={(e) => setMgrForm({ ...mgrForm, salario: e.target.value })}
+                  className="w-40"
+                />
               </div>
               <div>
                 <Label className="text-xs">% sobre equipe</Label>
-                <Input value={mgrForm.percentual} onChange={(e) => setMgrForm({ ...mgrForm, percentual: e.target.value })} className="w-32" />
+                <Input
+                  value={mgrForm.percentual}
+                  onChange={(e) => setMgrForm({ ...mgrForm, percentual: e.target.value })}
+                  className="w-32"
+                />
               </div>
-              <Button size="sm" onClick={saveMgr}>Salvar</Button>
-              <Button size="sm" variant="ghost" onClick={() => setMgrEdit(false)}>Cancelar</Button>
+              <Button size="sm" onClick={saveMgr}>
+                Salvar
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setMgrEdit(false)}>
+                Cancelar
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><span className="text-muted-foreground">Salário fixo:</span> <span className="font-medium">{fmtBRL(salarioFixo)}</span></div>
-              <div><span className="text-muted-foreground">% sobre equipe:</span> <span className="font-medium">{pctEquipe}%</span></div>
+              <div>
+                <span className="text-muted-foreground">Salário fixo:</span>{" "}
+                <span className="font-medium">{fmtBRL(salarioFixo)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">% sobre equipe:</span>{" "}
+                <span className="font-medium">{pctEquipe}%</span>
+              </div>
             </div>
           )}
         </CardContent>
@@ -882,38 +1153,53 @@ function RelatorioTab({ month }: { month: string }) {
                   </TableRow>
                 ))}
                 <TableRow className="bg-muted/30">
-                  <TableCell colSpan={3} className="text-right font-medium">Comissão Total</TableCell>
+                  <TableCell colSpan={3} className="text-right font-medium">
+                    Comissão Total
+                  </TableCell>
                   <TableCell className="font-semibold">{fmtEUR(s.comissaoTotal)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
 
             <div className="rounded-md border border-border bg-muted/10 p-3">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Bônus Semanal</p>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Bônus Semanal
+              </p>
               <div className="flex flex-wrap gap-2 text-sm">
                 {s.bonusSemanal.map((b) => (
-                  <span key={b.label} className={b.ok ? "text-emerald-300" : "text-muted-foreground"}>
+                  <span
+                    key={b.label}
+                    className={b.ok ? "text-emerald-300" : "text-muted-foreground"}
+                  >
                     {b.label}: {b.ok ? `✅ ${fmtEUR(b.valor)}` : "❌"}
                   </span>
                 ))}
               </div>
-              <p className="mt-2 text-xs">Total bônus: <span className="font-semibold">{fmtEUR(s.bonusTotal)}</span></p>
+              <p className="mt-2 text-xs">
+                Total bônus: <span className="font-semibold">{fmtEUR(s.bonusTotal)}</span>
+              </p>
             </div>
 
             <div className="rounded-md border border-border bg-muted/10 p-3">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Roleta</p>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Roleta
+              </p>
               {s.roletaSpins.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhum giro neste mês</p>
               ) : (
                 <ul className="space-y-1 text-sm">
                   {s.roletaSpins.map((sp: any) => (
                     <li key={sp.id}>
-                      🎰 {sp.premio_nome} {sp.premio_valor ? `— ${fmtEUR(Number(sp.premio_valor))}` : ""} {sp.pago ? "(pago)" : "(pendente)"}
+                      🎰 {sp.premio_nome}{" "}
+                      {sp.premio_valor ? `— ${fmtEUR(Number(sp.premio_valor))}` : ""}{" "}
+                      {sp.pago ? "(pago)" : "(pendente)"}
                     </li>
                   ))}
                 </ul>
               )}
-              <p className="mt-2 text-xs">Total monetário: <span className="font-semibold">{fmtEUR(s.roletaMonetaria)}</span></p>
+              <p className="mt-2 text-xs">
+                Total monetário: <span className="font-semibold">{fmtEUR(s.roletaMonetaria)}</span>
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -921,7 +1207,9 @@ function RelatorioTab({ month }: { month: string }) {
 
       {nadal && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Comissão do {GESTOR_NOME}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Comissão do {GESTOR_NOME}</CardTitle>
+          </CardHeader>
           <CardContent>
             <Table>
               <TableBody>
@@ -935,25 +1223,34 @@ function RelatorioTab({ month }: { month: string }) {
                 </TableRow>
                 <TableRow>
                   <TableCell>Comissão própria (vendas {nadal.full_name})</TableCell>
-                  <TableCell className="text-right font-medium">{fmtEUR(nadalComissaoPropria)}</TableCell>
+                  <TableCell className="text-right font-medium">
+                    {fmtEUR(nadalComissaoPropria)}
+                  </TableCell>
                 </TableRow>
                 <TableRow className="bg-muted/30">
                   <TableCell className="font-semibold">Total {nadal.full_name}</TableCell>
                   <TableCell className="text-right">
                     <div className="font-semibold">{fmtBRL(salarioFixo)}</div>
-                    <div className="font-semibold text-emerald-300">+ {fmtEUR(comissaoEquipe + nadalComissaoPropria)}</div>
+                    <div className="font-semibold text-emerald-300">
+                      + {fmtEUR(comissaoEquipe + nadalComissaoPropria)}
+                    </div>
                   </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
-            <p className="mt-2 text-xs text-muted-foreground">Valores em BRL e EUR mantidos separados (sem conversão).</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Valores em BRL e EUR mantidos separados (sem conversão).
+            </p>
           </CardContent>
         </Card>
       )}
 
       <BonusModal
         open={showBonusModal}
-        onClose={() => { setShowBonusModal(false); loadAll(); }}
+        onClose={() => {
+          setShowBonusModal(false);
+          loadAll();
+        }}
         profiles={profiles.filter((p) => p.full_name !== GESTOR_NOME)}
         currentBonus={bonus}
         startDate={startDate}
@@ -965,8 +1262,18 @@ function RelatorioTab({ month }: { month: string }) {
 }
 
 function BonusModal({
-  open, onClose, profiles, currentBonus, startDate,
-}: { open: boolean; onClose: () => void; profiles: Profile[]; currentBonus: any[]; startDate: string }) {
+  open,
+  onClose,
+  profiles,
+  currentBonus,
+  startDate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  profiles: Profile[];
+  currentBonus: any[];
+  startDate: string;
+}) {
   const [draft, setDraft] = useState<Record<string, { meta: string; valor: string }>>({});
 
   useEffect(() => {
@@ -974,7 +1281,10 @@ function BonusModal({
     const map: Record<string, { meta: string; valor: string }> = {};
     for (const p of profiles) {
       const b = currentBonus.find((x) => x.profile_id === p.id);
-      map[p.id] = { meta: b ? String(b.meta_semanal_eur) : "", valor: b ? String(b.valor_bonus) : "60" };
+      map[p.id] = {
+        meta: b ? String(b.meta_semanal_eur) : "",
+        valor: b ? String(b.valor_bonus) : "60",
+      };
     }
     setDraft(map);
   }, [open, profiles, currentBonus]);
@@ -986,11 +1296,18 @@ function BonusModal({
         const meta = Number((d?.meta || "").replace(",", "."));
         const valor = Number((d?.valor || "60").replace(",", "."));
         if (!meta) return null;
-        return { profile_id: p.id, meta_semanal_eur: meta, valor_bonus: valor, vigente_desde: startDate };
+        return {
+          profile_id: p.id,
+          meta_semanal_eur: meta,
+          valor_bonus: valor,
+          vigente_desde: startDate,
+        };
       })
       .filter(Boolean);
     if (!rows.length) return toast.error("Defina ao menos uma meta");
-    const { error } = await db.from("weekly_bonus_config").upsert(rows, { onConflict: "profile_id,vigente_desde" });
+    const { error } = await db
+      .from("weekly_bonus_config")
+      .upsert(rows, { onConflict: "profile_id,vigente_desde" });
     if (error) return toast.error(error.message);
     toast.success("Bônus salvo");
     onClose();
@@ -999,7 +1316,9 @@ function BonusModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader><DialogTitle>Configurar Bônus Semanal</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Configurar Bônus Semanal</DialogTitle>
+        </DialogHeader>
         <Table>
           <TableHeader>
             <TableRow>
@@ -1015,14 +1334,30 @@ function BonusModal({
                 <TableCell>
                   <Input
                     value={draft[p.id]?.meta ?? ""}
-                    onChange={(e) => setDraft({ ...draft, [p.id]: { ...(draft[p.id] ?? { valor: "60", meta: "" }), meta: e.target.value } })}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        [p.id]: {
+                          ...(draft[p.id] ?? { valor: "60", meta: "" }),
+                          meta: e.target.value,
+                        },
+                      })
+                    }
                     placeholder="ex: 5000"
                   />
                 </TableCell>
                 <TableCell>
                   <Input
                     value={draft[p.id]?.valor ?? "60"}
-                    onChange={(e) => setDraft({ ...draft, [p.id]: { ...(draft[p.id] ?? { meta: "", valor: "" }), valor: e.target.value } })}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        [p.id]: {
+                          ...(draft[p.id] ?? { meta: "", valor: "" }),
+                          valor: e.target.value,
+                        },
+                      })
+                    }
                   />
                 </TableCell>
               </TableRow>
@@ -1030,7 +1365,9 @@ function BonusModal({
           </TableBody>
         </Table>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
           <Button onClick={save}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
