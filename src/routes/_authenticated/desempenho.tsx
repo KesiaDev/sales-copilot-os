@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/topbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -27,21 +29,33 @@ import { Activity, GitBranch, XCircle, Clock3 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/desempenho")({ component: DesempenhoPage });
 
-type VendedorMetrica = Awaited<ReturnType<typeof getClintVendedorMetricas>>[number];
+type Periodo = "dia" | "semana" | "mes" | "tudo";
+type VendedorMetrica = Awaited<ReturnType<typeof getClintVendedorMetricas>>["vendedores"][number];
 type FunilEntry = { name: string; value: number };
 type EtapaTempo = { track_stage_old_stage: string; track_stage_stage_time: number };
 
+const PERIODOS: { key: Periodo; label: string }[] = [
+  { key: "dia", label: "Dia" },
+  { key: "semana", label: "Semana" },
+  { key: "mes", label: "Mês" },
+  { key: "tudo", label: "Tudo" },
+];
+
 function DesempenhoPage() {
-  const { data: vendedores } = useQuery({
-    queryKey: ["clint-vendedor-metricas"],
-    queryFn: () => getClintVendedorMetricas(),
+  const [periodo, setPeriodo] = useState<Periodo>("tudo");
+
+  const { data: metricas } = useQuery({
+    queryKey: ["clint-vendedor-metricas", periodo],
+    queryFn: () => getClintVendedorMetricas({ data: { periodo } }),
   });
   const { data: snapshots } = useQuery({
     queryKey: ["clint-funil-snapshots"],
     queryFn: () => getClintFunilSnapshots(),
   });
 
-  const capturadoEm = vendedores?.[0]?.capturado_em;
+  const vendedores = metricas?.vendedores ?? [];
+  const capturadoEm = metricas?.capturadoEm;
+  const semHistorico = periodo !== "tudo" && !metricas?.baselineCapturadoEm;
 
   const funil = ((snapshots?.funil_conversao?.dados as FunilEntry[]) ?? [])
     .filter((s) => s.name !== "Total")
@@ -60,17 +74,45 @@ function DesempenhoPage() {
         subtitle="Atividades, no-show, funil e motivo de perda — sincronizado da Clint"
       />
       <main className="space-y-6 p-4 md:p-6">
-        {capturadoEm ? (
-          <p className="text-xs text-muted-foreground">
-            Última sincronização: {shortDate(capturadoEm)} — os valores são o acumulado configurado
-            em cada dashboard na Clint (a API não permite filtrar por período).
-          </p>
-        ) : (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {PERIODOS.map((p) => (
+              <Button
+                key={p.key}
+                size="sm"
+                variant={periodo === p.key ? "default" : "outline"}
+                className="rounded-full"
+                onClick={() => setPeriodo(p.key)}
+              >
+                {p.label}
+              </Button>
+            ))}
+          </div>
+          {capturadoEm && (
+            <p className="text-xs text-muted-foreground">
+              Última sincronização: {shortDate(capturadoEm)}
+            </p>
+          )}
+        </div>
+
+        {!capturadoEm && (
           <Card className="border-warning/40 bg-warning/5">
             <CardContent className="p-4 text-sm">
               Nenhum snapshot da Clint sincronizado ainda. Ative o workflow n8n{" "}
               <code className="rounded bg-muted px-1.5 py-0.5">05 - Clint: Sync Dashboards</code>{" "}
               para popular esta página.
+            </CardContent>
+          </Card>
+        )}
+
+        {capturadoEm && semHistorico && (
+          <Card className="border-warning/40 bg-warning/5">
+            <CardContent className="p-4 text-sm">
+              Ainda não há snapshot de dias anteriores suficiente para calcular "{periodo}" — os
+              valores abaixo são o acumulado total até agora. A comparação por período fica precisa
+              conforme o sync diário acumula histórico (ative o workflow{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5">05 - Clint: Sync Dashboards</code> no
+              n8n para isso rodar todo dia).
             </CardContent>
           </Card>
         )}
