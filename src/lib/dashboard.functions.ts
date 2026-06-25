@@ -163,13 +163,8 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
           .range(from, to),
       ),
       supabase.from("profiles").select("id, full_name, ativo").eq("ativo", true),
-      fetchAllRows<{ id: string; profile_id: string | null; status: string }>(({ from, to }) =>
-        supabase
-          .from("leads")
-          .select("id, profile_id, status")
-          .gte("recebido_em", startMonth)
-          .range(from, to),
-      ),
+      supabase.rpc("dashboard_leads_summary", { p_start: startMonth }),
+
       fetchAllRows<{ valor: number; profile_id: string | null; vendido_em: string }>(
         salesQuery("valor, profile_id, vendido_em", ["vendido_em", start6mo]),
       ),
