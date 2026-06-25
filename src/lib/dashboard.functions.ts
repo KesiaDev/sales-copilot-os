@@ -120,6 +120,8 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         return q as unknown as PromiseLike<{ data: any[] | null; error: unknown }>;
       };
 
+    const currentMesAno = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
     const [
       salesMonth,
       salesToday,
@@ -131,6 +133,8 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
       leads,
       sales6mo,
       goals6mo,
+      metaMensalRes,
+      metasMensaisAllRes,
     ] = await Promise.all([
       fetchAllRows<{
         id: string;
@@ -170,7 +174,14 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         salesQuery("valor, profile_id, vendido_em", ["vendido_em", start6mo]),
       ),
       supabase.from("goals").select("valor_meta, mes, ano"),
+      supabase
+        .from("metas_mensais")
+        .select("meta_geral_eur")
+        .eq("mes_ano", currentMesAno)
+        .maybeSingle(),
+      supabase.from("metas_mensais").select("mes_ano, meta_geral_eur"),
     ]);
+
 
     const sum = (arr: any[] | null, k = "valor") =>
       (arr ?? []).reduce((a, r) => a + Number(r[k] ?? 0), 0);
