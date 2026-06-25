@@ -16,7 +16,9 @@ import {
   RefreshCw,
   DollarSign,
   Activity,
+  Target,
 } from "lucide-react";
+
 
 import {
   Sidebar,
@@ -41,8 +43,10 @@ const groups = [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { title: "Daily Executiva", url: "/daily", icon: FileText },
       { title: "Previsão", url: "/previsao", icon: TrendingUp },
+      { title: "Configurar Metas", url: "/metas", icon: Target },
     ],
   },
+
   {
     label: "Pessoas",
     items: [

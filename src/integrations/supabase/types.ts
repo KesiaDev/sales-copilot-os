@@ -713,6 +713,60 @@ export type Database = {
           },
         ]
       }
+      metas_mensais: {
+        Row: {
+          created_at: string
+          id: string
+          mes_ano: string
+          meta_geral_eur: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mes_ano: string
+          meta_geral_eur?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mes_ano?: string
+          meta_geral_eur?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      metas_produtos: {
+        Row: {
+          created_at: string
+          id: string
+          mes_ano: string
+          meta_eur: number
+          meta_vendas: number
+          produto_grupo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mes_ano: string
+          meta_eur?: number
+          meta_vendas?: number
+          produto_grupo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mes_ano?: string
+          meta_eur?: number
+          meta_vendas?: number
+          produto_grupo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       objections: {
         Row: {
           created_at: string
