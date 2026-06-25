@@ -538,11 +538,20 @@ function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-base">Progresso da meta mensal</CardTitle>
-                <CardDescription>
-                  {formatCurrency(k.receitaMes)} de {formatCurrency(k.meta)}
+                <CardDescription className="flex items-center gap-2">
+                  <span>
+                    {formatCurrency(k.receitaMes)} de {formatCurrency(k.meta)}
+                  </span>
+                  <Link
+                    to="/metas"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <Pencil className="h-3 w-3" /> Editar meta
+                  </Link>
                 </CardDescription>
               </div>
               <Badge
+
                 variant={
                   k.percentMeta >= 100
                     ? "default"
