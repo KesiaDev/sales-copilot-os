@@ -849,47 +849,68 @@ export type Database = {
       refunds: {
         Row: {
           created_at: string
+          data_evento: string | null
+          email: string | null
           external_id: string | null
           external_source: string | null
+          hotmart_transaction: string | null
           id: string
+          mes_referencia: string | null
           metadata: Json | null
+          moeda: string | null
           motivo: string | null
           ocorreu_em: string
           pais: string | null
           produto: string | null
           produto_grupo: string | null
+          produto_nome: string | null
           profile_id: string | null
           sale_id: string | null
+          tipo: string | null
           valor: number
         }
         Insert: {
           created_at?: string
+          data_evento?: string | null
+          email?: string | null
           external_id?: string | null
           external_source?: string | null
+          hotmart_transaction?: string | null
           id?: string
+          mes_referencia?: string | null
           metadata?: Json | null
+          moeda?: string | null
           motivo?: string | null
           ocorreu_em?: string
           pais?: string | null
           produto?: string | null
           produto_grupo?: string | null
+          produto_nome?: string | null
           profile_id?: string | null
           sale_id?: string | null
+          tipo?: string | null
           valor: number
         }
         Update: {
           created_at?: string
+          data_evento?: string | null
+          email?: string | null
           external_id?: string | null
           external_source?: string | null
+          hotmart_transaction?: string | null
           id?: string
+          mes_referencia?: string | null
           metadata?: Json | null
+          moeda?: string | null
           motivo?: string | null
           ocorreu_em?: string
           pais?: string | null
           produto?: string | null
           produto_grupo?: string | null
+          produto_nome?: string | null
           profile_id?: string | null
           sale_id?: string | null
+          tipo?: string | null
           valor?: number
         }
         Relationships: [

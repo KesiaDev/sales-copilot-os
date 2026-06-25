@@ -22,9 +22,10 @@ import {
   getReembolsosPorProduto,
 } from "@/lib/data.functions";
 import { getDashboardMetrics } from "@/lib/dashboard.functions";
+import { listRefundsByMonth } from "@/lib/refunds.functions";
 import { formatNumber, formatPercent, shortDate, monthLabel, todayISO } from "@/lib/format";
 import { useFormatCurrency } from "@/components/currency-provider";
-import { Database, Webhook, Package, CalendarRange, RotateCcw } from "lucide-react";
+import { Database, Webhook, Package, CalendarRange, RotateCcw, TrendingDown } from "lucide-react";
 import { HotmartCsvImport } from "@/components/hotmart-csv-import";
 import { DuplicateSalesReview } from "@/components/duplicate-sales-review";
 
@@ -39,6 +40,7 @@ function CrmPage() {
   const [dataInicio, setDataInicio] = useState(inicioDoAno());
   const [dataFim, setDataFim] = useState(todayISO());
   const [mes, setMes] = useState("");
+  const [mesRefundsRef, setMesRefundsRef] = useState(new Date().toISOString().slice(0, 7));
 
   function aplicarMes(valor: string) {
     setMes(valor);
@@ -75,6 +77,10 @@ function CrmPage() {
   const { data: reembolsosPorProduto } = useQuery({
     queryKey: ["reembolsos-por-produto", periodo],
     queryFn: () => getReembolsosPorProduto({ data: periodo }),
+  });
+  const { data: refundsModule } = useQuery({
+    queryKey: ["refunds-module", mesRefundsRef],
+    queryFn: () => listRefundsByMonth({ data: { mesReferencia: mesRefundsRef } }),
   });
 
   const fontes = (sales ?? []).reduce((acc: any, s: any) => {
@@ -422,6 +428,127 @@ function CrmPage() {
                 ))}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+
+        {/* Reembolsos e Cancelamentos (Hotmart via webhook) */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-5 w-5 text-rose-500" />
+                <CardTitle className="text-base">Reembolsos e Cancelamentos</CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="refunds-mes" className="text-xs text-muted-foreground">
+                  Mês
+                </Label>
+                <Input
+                  id="refunds-mes"
+                  type="month"
+                  value={mesRefundsRef}
+                  onChange={(e) => setMesRefundsRef(e.target.value)}
+                  className="h-8 w-[150px]"
+                />
+              </div>
+            </div>
+            <CardDescription>
+              Dados sincronizados pelo n8n a partir do webhook da Hotmart.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {refundsModule && (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-3">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Total reembolsado
+                  </div>
+                  <div className="mt-1 text-lg font-bold tabular-nums text-rose-500">
+                    −{fmt(refundsModule.totals.totalReembolsado)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {refundsModule.totals.reembolsoCount}{" "}
+                    {refundsModule.totals.reembolsoCount === 1 ? "ocorrência" : "ocorrências"}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Cancelamentos / Chargebacks
+                  </div>
+                  <div className="mt-1 text-lg font-bold tabular-nums text-amber-500">
+                    {refundsModule.totals.cancelamentoCount} canc ·{" "}
+                    {refundsModule.totals.chargebackCount} cb
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    no mês de {monthLabel(`${mesRefundsRef}-01`)}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-card/50 p-3">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    % do faturamento bruto
+                  </div>
+                  <div className="mt-1 text-lg font-bold tabular-nums">
+                    {formatPercent(refundsModule.totals.percentDoBruto)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    sobre {fmt(refundsModule.totals.totalVendasMes)}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-hidden rounded-md border border-border/60">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Produto</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Transação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(refundsModule?.items ?? []).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-6 text-center text-xs text-muted-foreground">
+                        Nenhum reembolso/cancelamento neste mês.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {(refundsModule?.items ?? []).map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-xs">
+                        {r.data ? shortDate(r.data) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            r.tipo === "REEMBOLSO"
+                              ? "border-rose-500/40 text-[10px] text-rose-500"
+                              : r.tipo === "CHARGEBACK"
+                                ? "border-purple-500/40 text-[10px] text-purple-500"
+                                : "border-amber-500/40 text-[10px] text-amber-500"
+                          }
+                        >
+                          {r.tipo}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">{r.produto}</TableCell>
+                      <TableCell className="text-right text-xs font-semibold tabular-nums text-rose-500">
+                        −{fmt(r.valor)}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{r.email}</TableCell>
+                      <TableCell className="font-mono text-[10px] text-muted-foreground">
+                        {r.transacao}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </main>
