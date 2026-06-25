@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getDashboardMetrics, getResultadosPeriodo } from "@/lib/dashboard.functions";
+import { getRefundsKpis } from "@/lib/refunds.functions";
 import { formatPercent, shortDate, todayISO } from "@/lib/format";
 import { useFormatCurrency } from "@/components/currency-provider";
 import { CalendarRange } from "lucide-react";
