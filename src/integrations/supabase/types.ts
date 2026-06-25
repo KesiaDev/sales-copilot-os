@@ -139,8 +139,12 @@ export type Database = {
           external_id: string | null
           external_source: string | null
           id: string
+          metadata: Json | null
           motivo: string | null
           ocorreu_em: string
+          pais: string | null
+          produto: string | null
+          produto_grupo: string | null
           profile_id: string | null
           sale_id: string | null
           valor: number
@@ -150,8 +154,12 @@ export type Database = {
           external_id?: string | null
           external_source?: string | null
           id?: string
+          metadata?: Json | null
           motivo?: string | null
           ocorreu_em?: string
+          pais?: string | null
+          produto?: string | null
+          produto_grupo?: string | null
           profile_id?: string | null
           sale_id?: string | null
           valor?: number
@@ -161,8 +169,12 @@ export type Database = {
           external_id?: string | null
           external_source?: string | null
           id?: string
+          metadata?: Json | null
           motivo?: string | null
           ocorreu_em?: string
+          pais?: string | null
+          produto?: string | null
+          produto_grupo?: string | null
           profile_id?: string | null
           sale_id?: string | null
           valor?: number
@@ -840,8 +852,12 @@ export type Database = {
           external_id: string | null
           external_source: string | null
           id: string
+          metadata: Json | null
           motivo: string | null
           ocorreu_em: string
+          pais: string | null
+          produto: string | null
+          produto_grupo: string | null
           profile_id: string | null
           sale_id: string | null
           valor: number
@@ -851,8 +867,12 @@ export type Database = {
           external_id?: string | null
           external_source?: string | null
           id?: string
+          metadata?: Json | null
           motivo?: string | null
           ocorreu_em?: string
+          pais?: string | null
+          produto?: string | null
+          produto_grupo?: string | null
           profile_id?: string | null
           sale_id?: string | null
           valor: number
@@ -862,8 +882,12 @@ export type Database = {
           external_id?: string | null
           external_source?: string | null
           id?: string
+          metadata?: Json | null
           motivo?: string | null
           ocorreu_em?: string
+          pais?: string | null
+          produto?: string | null
+          produto_grupo?: string | null
           profile_id?: string | null
           sale_id?: string | null
           valor?: number
