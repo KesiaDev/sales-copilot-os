@@ -408,7 +408,11 @@ function CrmPage() {
                   <TableCell className="text-right text-xs font-semibold whitespace-nowrap">
                     {fmt(produtosOrdenados.reduce((s, p) => s + p.totalValor, 0))}
                   </TableCell>
+                  <TableCell />
+                  <TableCell />
+                  <TableCell />
                 </TableRow>
+
               </TableBody>
             </Table>
           </CardContent>
