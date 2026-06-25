@@ -97,8 +97,11 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
       now.getDate() - 1,
     ).toISOString();
     const start6mo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
+    const endNow = now.toISOString();
+
 
     // Vendas marcadas como possivel duplicata (mesma venda gravada duas vezes por
+
     // fontes diferentes — Clint + Hotmart) ainda nao foram confirmadas como reais,
     // entao nao contam nos totais oficiais ate alguem revisar no CRM.
     const salesQuery =
@@ -124,6 +127,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
 
     const [
       salesMonth,
+      salesMonthRanked,
       salesToday,
       salesYest,
       goalsRes,
@@ -143,7 +147,25 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         vendido_em: string;
         produto: string;
       }>(salesQuery("id, valor, profile_id, vendido_em, produto", ["vendido_em", startMonth])),
+      fetchAllRows<{
+        id: string;
+        valor: number;
+        profile_id: string | null;
+        vendido_em: string;
+        produto: string;
+      }>(
+        ({ from, to }) =>
+          supabase
+            .from("sales")
+            .select("id, valor, profile_id, vendido_em, produto")
+            .eq("possible_duplicate", false)
+            .gte("vendido_em", startMonth)
+            .lte("vendido_em", endNow)
+            .in("fonte", ["clint", "hotmart"])
+            .range(from, to) as any,
+      ),
       fetchAllRows<{ valor: number }>(salesQuery("valor", ["vendido_em", startToday])),
+
       fetchAllRows<{ valor: number }>(
         salesQuery("valor", ["vendido_em", startYesterday], ["vendido_em", startToday]),
       ),
@@ -209,7 +231,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     const profiles = profilesRes.data ?? [];
     const porVendedor = profiles
       .map((p: any) => {
-        const vendas = salesMonth.filter((s) => s.profile_id === p.id);
+        const vendas = salesMonthRanked.filter((s) => s.profile_id === p.id);
         const receita = sum(vendas);
         const leadsV = leadsAgg.filter((l) => l.profile_id === p.id);
         const totalLeadsV = leadsV.reduce((a, r) => a + Number(r.c), 0);
