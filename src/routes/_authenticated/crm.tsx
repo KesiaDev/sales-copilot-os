@@ -26,6 +26,8 @@ import { listRefundsByMonth } from "@/lib/refunds.functions";
 import { formatNumber, formatPercent, shortDate, monthLabel, todayISO } from "@/lib/format";
 import { useFormatCurrency } from "@/components/currency-provider";
 import { Database, Webhook, Package, CalendarRange, RotateCcw, TrendingDown } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
 import { HotmartCsvImport } from "@/components/hotmart-csv-import";
 import { DuplicateSalesReview } from "@/components/duplicate-sales-review";
 
@@ -89,12 +91,36 @@ function CrmPage() {
   }, {});
 
   const mesAtual = new Date().toISOString().slice(0, 7);
+
+  const { data: metasProdutos } = useQuery({
+    queryKey: ["metas-produtos", mesAtual],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("metas_produtos")
+        .select("produto_grupo, meta_eur, meta_vendas")
+        .eq("mes_ano", mesAtual);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const metasMap = useMemo(() => {
+    const m = new Map<string, { meta_eur: number; meta_vendas: number }>();
+    (metasProdutos ?? []).forEach((r: any) =>
+      m.set(r.produto_grupo, {
+        meta_eur: Number(r.meta_eur ?? 0),
+        meta_vendas: Number(r.meta_vendas ?? 0),
+      }),
+    );
+    return m;
+  }, [metasProdutos]);
+
   const produtosOrdenados = [...(porProdutoMes?.produtos ?? [])].sort((a, b) => {
     const aCatchAll = a.produto === "Outros" || a.produto === "Não classificado";
     const bCatchAll = b.produto === "Outros" || b.produto === "Não classificado";
     if (aCatchAll !== bCatchAll) return aCatchAll ? 1 : -1;
     return b.totalValor - a.totalValor;
   });
+
 
   return (
     <>
@@ -260,6 +286,10 @@ function CrmPage() {
                     </TableHead>
                   ))}
                   <TableHead className="text-right font-semibold">Total</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Meta €</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">% atingida</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Contratos</TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -314,6 +344,45 @@ function CrmPage() {
                           {p.totalVendas} venda{p.totalVendas === 1 ? "" : "s"}
                         </div>
                       </TableCell>
+                      {(() => {
+                        const meta = metasMap.get(p.produto);
+                        const curr = (p.meses as any)[mesAtual];
+                        const receitaAtual = curr?.valor ?? 0;
+                        const vendasAtual = curr?.vendas ?? 0;
+                        const pct =
+                          meta && meta.meta_eur > 0
+                            ? (receitaAtual / meta.meta_eur) * 100
+                            : null;
+                        return (
+                          <>
+                            <TableCell className="text-right text-xs whitespace-nowrap">
+                              {meta && meta.meta_eur > 0 ? fmt(meta.meta_eur) : "—"}
+                            </TableCell>
+                            <TableCell className="text-right text-xs whitespace-nowrap">
+                              {pct != null ? (
+                                <span
+                                  className={
+                                    pct >= 100
+                                      ? "font-semibold text-emerald-600"
+                                      : pct >= 70
+                                        ? "text-amber-600"
+                                        : "text-muted-foreground"
+                                  }
+                                >
+                                  {formatPercent(pct)}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-xs whitespace-nowrap">
+                              {meta && meta.meta_vendas > 0
+                                ? `${vendasAtual} / ${meta.meta_vendas}`
+                                : "—"}
+                            </TableCell>
+                          </>
+                        );
+                      })()}
                     </TableRow>
                   );
                 })}
@@ -321,6 +390,7 @@ function CrmPage() {
                   <TableCell className="sticky left-0 z-10 bg-card text-xs font-semibold">
                     Total geral
                   </TableCell>
+
                   {(porProdutoMes?.meses ?? []).map((m) => {
                     const totalMes = produtosOrdenados.reduce(
                       (s, p) => s + ((p.meses as any)[m]?.valor ?? 0),
@@ -338,7 +408,11 @@ function CrmPage() {
                   <TableCell className="text-right text-xs font-semibold whitespace-nowrap">
                     {fmt(produtosOrdenados.reduce((s, p) => s + p.totalValor, 0))}
                   </TableCell>
+                  <TableCell />
+                  <TableCell />
+                  <TableCell />
                 </TableRow>
+
               </TableBody>
             </Table>
           </CardContent>
