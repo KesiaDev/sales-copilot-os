@@ -98,6 +98,7 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
               await supabaseAdmin.from("sales").insert({
                 produto: productName || "Hotmart Product",
                 produto_grupo,
+                profile_id: profileId,
                 valor,
                 pais,
                 fonte: "hotmart",
