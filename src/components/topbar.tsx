@@ -2,7 +2,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
-import { useCurrency } from "@/components/currency-provider";
 
 export function Topbar({
   title,
@@ -14,7 +13,6 @@ export function Topbar({
   showCurrencyToggle?: boolean;
 }) {
   const { theme, toggle } = useTheme();
-  const { currency, toggle: toggleCurrency, rateLoading } = useCurrency();
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md md:px-6">
       <SidebarTrigger />
@@ -26,12 +24,11 @@ export function Topbar({
         <Button
           variant="outline"
           size="sm"
-          onClick={toggleCurrency}
-          disabled={rateLoading}
+          disabled
           className="h-8"
-          title="Alternar moeda de exibição (cotação atualizada automaticamente)"
+          title="A plataforma exibe valores em EUR"
         >
-          {currency === "EUR" ? "€ EUR" : "R$ BRL"}
+          € EUR
         </Button>
       )}
       <Button variant="ghost" size="icon" onClick={toggle} aria-label="Alternar tema">
@@ -40,3 +37,4 @@ export function Topbar({
     </header>
   );
 }
+

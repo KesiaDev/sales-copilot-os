@@ -1,9 +1,8 @@
-export function formatCurrency(value: number | null | undefined, currency = "EUR") {
+export function formatCurrency(value: number | null | undefined, _currency = "EUR") {
   const n = Number(value ?? 0);
-  const locale = currency === "BRL" ? "pt-BR" : "pt-PT";
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat("pt-PT", {
     style: "currency",
-    currency,
+    currency: "EUR",
     maximumFractionDigits: 0,
   }).format(n);
 }
