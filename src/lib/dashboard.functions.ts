@@ -230,7 +230,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     const profiles = profilesRes.data ?? [];
     const porVendedor = profiles
       .map((p: any) => {
-        const vendas = salesMonth.filter((s) => s.profile_id === p.id);
+        const vendas = salesMonthRanked.filter((s) => s.profile_id === p.id);
         const receita = sum(vendas);
         const leadsV = leadsAgg.filter((l) => l.profile_id === p.id);
         const totalLeadsV = leadsV.reduce((a, r) => a + Number(r.c), 0);
