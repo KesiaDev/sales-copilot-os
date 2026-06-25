@@ -99,10 +99,9 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     const start6mo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
     const endNow = now.toISOString();
 
-    const endNow = now.toISOString();
-
 
     // Vendas marcadas como possivel duplicata (mesma venda gravada duas vezes por
+
     // fontes diferentes — Clint + Hotmart) ainda nao foram confirmadas como reais,
     // entao nao contam nos totais oficiais ate alguem revisar no CRM.
     const salesQuery =
