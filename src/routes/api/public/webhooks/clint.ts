@@ -70,6 +70,12 @@ export const Route = createFileRoute("/api/public/webhooks/clint")({
             const fonte = validSources.includes(data?.source) ? data.source : "outro";
 
             const valor = Number(data?.value ?? data?.amount ?? 0);
+            if (!valor || valor <= 0) {
+              return new Response(
+                JSON.stringify({ ok: true, skipped: "valor_zero" }),
+                { headers: { "Content-Type": "application/json" } },
+              );
+            }
             const compradorEmail: string | null = data?.contact_email
               ? String(data.contact_email).trim()
               : null;
