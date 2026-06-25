@@ -188,7 +188,16 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     const receitaMes = sum(salesMonth);
     const receitaHoje = sum(salesToday);
     const receitaOntem = sum(salesYest);
-    const meta = sum(goalsRes.data ?? [], "valor_meta");
+    const metaFromMetasMensais = metaMensalRes.data?.meta_geral_eur;
+    const meta =
+      metaFromMetasMensais != null
+        ? Number(metaFromMetasMensais)
+        : sum(goalsRes.data ?? [], "valor_meta") || 250000;
+    const metasMensaisMap = new Map<string, number>();
+    (metasMensaisAllRes.data ?? []).forEach((m: any) =>
+      metasMensaisMap.set(m.mes_ano, Number(m.meta_geral_eur ?? 0)),
+    );
+
     const reembolsos = sum(refunds);
     const cancelamentos = sum(cancellations);
     const ticketMedio = salesMonth.length ? receitaMes / salesMonth.length : 0;
