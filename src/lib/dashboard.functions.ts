@@ -295,7 +295,8 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
       const receita = sum(monthSales);
       const deals = monthSales.length;
       const goal = goals6moData.filter((g: any) => g.mes === mNum && g.ano === y);
-      const metaMes = sum(goal, "valor_meta");
+      const metaMes = metasMensaisMap.get(key) ?? sum(goal, "valor_meta");
+
       // melhor vendedor
       const byV = new Map<string, number>();
       monthSales.forEach((s) =>
