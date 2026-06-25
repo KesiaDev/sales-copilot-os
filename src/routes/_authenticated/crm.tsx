@@ -78,6 +78,10 @@ function CrmPage() {
     queryKey: ["reembolsos-por-produto", periodo],
     queryFn: () => getReembolsosPorProduto({ data: periodo }),
   });
+  const { data: refundsModule } = useQuery({
+    queryKey: ["refunds-module", mesRefundsRef],
+    queryFn: () => listRefundsByMonth({ data: { mesReferencia: mesRefundsRef } }),
+  });
 
   const fontes = (sales ?? []).reduce((acc: any, s: any) => {
     acc[s.fonte] = (acc[s.fonte] ?? 0) + Number(s.valor);
