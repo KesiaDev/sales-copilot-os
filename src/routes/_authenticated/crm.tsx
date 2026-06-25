@@ -91,12 +91,36 @@ function CrmPage() {
   }, {});
 
   const mesAtual = new Date().toISOString().slice(0, 7);
+
+  const { data: metasProdutos } = useQuery({
+    queryKey: ["metas-produtos", mesAtual],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("metas_produtos")
+        .select("produto_grupo, meta_eur, meta_vendas")
+        .eq("mes_ano", mesAtual);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const metasMap = useMemo(() => {
+    const m = new Map<string, { meta_eur: number; meta_vendas: number }>();
+    (metasProdutos ?? []).forEach((r: any) =>
+      m.set(r.produto_grupo, {
+        meta_eur: Number(r.meta_eur ?? 0),
+        meta_vendas: Number(r.meta_vendas ?? 0),
+      }),
+    );
+    return m;
+  }, [metasProdutos]);
+
   const produtosOrdenados = [...(porProdutoMes?.produtos ?? [])].sort((a, b) => {
     const aCatchAll = a.produto === "Outros" || a.produto === "Não classificado";
     const bCatchAll = b.produto === "Outros" || b.produto === "Não classificado";
     if (aCatchAll !== bCatchAll) return aCatchAll ? 1 : -1;
     return b.totalValor - a.totalValor;
   });
+
 
   return (
     <>
