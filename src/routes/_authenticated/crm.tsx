@@ -344,6 +344,45 @@ function CrmPage() {
                           {p.totalVendas} venda{p.totalVendas === 1 ? "" : "s"}
                         </div>
                       </TableCell>
+                      {(() => {
+                        const meta = metasMap.get(p.produto);
+                        const curr = (p.meses as any)[mesAtual];
+                        const receitaAtual = curr?.valor ?? 0;
+                        const vendasAtual = curr?.vendas ?? 0;
+                        const pct =
+                          meta && meta.meta_eur > 0
+                            ? (receitaAtual / meta.meta_eur) * 100
+                            : null;
+                        return (
+                          <>
+                            <TableCell className="text-right text-xs whitespace-nowrap">
+                              {meta && meta.meta_eur > 0 ? fmt(meta.meta_eur) : "—"}
+                            </TableCell>
+                            <TableCell className="text-right text-xs whitespace-nowrap">
+                              {pct != null ? (
+                                <span
+                                  className={
+                                    pct >= 100
+                                      ? "font-semibold text-emerald-600"
+                                      : pct >= 70
+                                        ? "text-amber-600"
+                                        : "text-muted-foreground"
+                                  }
+                                >
+                                  {formatPercent(pct)}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-xs whitespace-nowrap">
+                              {meta && meta.meta_vendas > 0
+                                ? `${vendasAtual} / ${meta.meta_vendas}`
+                                : "—"}
+                            </TableCell>
+                          </>
+                        );
+                      })()}
                     </TableRow>
                   );
                 })}
@@ -351,6 +390,7 @@ function CrmPage() {
                   <TableCell className="sticky left-0 z-10 bg-card text-xs font-semibold">
                     Total geral
                   </TableCell>
+
                   {(porProdutoMes?.meses ?? []).map((m) => {
                     const totalMes = produtosOrdenados.reduce(
                       (s, p) => s + ((p.meses as any)[m]?.valor ?? 0),
