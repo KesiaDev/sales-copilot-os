@@ -22,9 +22,10 @@ import {
   getReembolsosPorProduto,
 } from "@/lib/data.functions";
 import { getDashboardMetrics } from "@/lib/dashboard.functions";
+import { listRefundsByMonth } from "@/lib/refunds.functions";
 import { formatNumber, formatPercent, shortDate, monthLabel, todayISO } from "@/lib/format";
 import { useFormatCurrency } from "@/components/currency-provider";
-import { Database, Webhook, Package, CalendarRange, RotateCcw } from "lucide-react";
+import { Database, Webhook, Package, CalendarRange, RotateCcw, TrendingDown } from "lucide-react";
 import { HotmartCsvImport } from "@/components/hotmart-csv-import";
 import { DuplicateSalesReview } from "@/components/duplicate-sales-review";
 
