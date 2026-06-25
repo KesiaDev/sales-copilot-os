@@ -262,6 +262,10 @@ function Kpi({ icon: Icon, label, value, hint, hintClass, accent }: any) {
 
 function DashboardPage() {
   const { data } = useQuery(dashboardQuery());
+  const { data: refundsKpi } = useQuery({
+    queryKey: ["refunds-kpis"],
+    queryFn: () => getRefundsKpis(),
+  });
   const formatCurrency = useFormatCurrency();
   if (!data)
     return (
