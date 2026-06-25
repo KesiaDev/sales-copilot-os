@@ -26,6 +26,8 @@ import { listRefundsByMonth } from "@/lib/refunds.functions";
 import { formatNumber, formatPercent, shortDate, monthLabel, todayISO } from "@/lib/format";
 import { useFormatCurrency } from "@/components/currency-provider";
 import { Database, Webhook, Package, CalendarRange, RotateCcw, TrendingDown } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
 import { HotmartCsvImport } from "@/components/hotmart-csv-import";
 import { DuplicateSalesReview } from "@/components/duplicate-sales-review";
 
