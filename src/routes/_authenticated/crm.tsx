@@ -40,6 +40,7 @@ function CrmPage() {
   const [dataInicio, setDataInicio] = useState(inicioDoAno());
   const [dataFim, setDataFim] = useState(todayISO());
   const [mes, setMes] = useState("");
+  const [mesRefundsRef, setMesRefundsRef] = useState(new Date().toISOString().slice(0, 7));
 
   function aplicarMes(valor: string) {
     setMes(valor);
