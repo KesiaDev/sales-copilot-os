@@ -16,7 +16,9 @@ import {
   RefreshCw,
   DollarSign,
   Activity,
+  Target,
 } from "lucide-react";
+
 
 import {
   Sidebar,
