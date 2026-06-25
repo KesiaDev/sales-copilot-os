@@ -163,13 +163,8 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
           .range(from, to),
       ),
       supabase.from("profiles").select("id, full_name, ativo").eq("ativo", true),
-      fetchAllRows<{ id: string; profile_id: string | null; status: string }>(({ from, to }) =>
-        supabase
-          .from("leads")
-          .select("id, profile_id, status")
-          .gte("recebido_em", startMonth)
-          .range(from, to),
-      ),
+      supabase.rpc("dashboard_leads_summary", { p_start: startMonth }),
+
       fetchAllRows<{ valor: number; profile_id: string | null; vendido_em: string }>(
         salesQuery("valor, profile_id, vendido_em", ["vendido_em", start6mo]),
       ),
@@ -202,8 +197,13 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     const cancelamentos = sum(cancellations);
     const ticketMedio = salesMonth.length ? receitaMes / salesMonth.length : 0;
 
-    const ganhos = leads.filter((l) => l.status === "ganho").length;
-    const conversao = leads.length ? (ganhos / leads.length) * 100 : 0;
+    type LeadAgg = { profile_id: string | null; status: string; c: number };
+    const leadsAgg: LeadAgg[] = ((leads as any)?.data ?? []) as LeadAgg[];
+    const totalLeads = leadsAgg.reduce((a, r) => a + Number(r.c), 0);
+    const ganhos = leadsAgg
+      .filter((l) => l.status === "ganho")
+      .reduce((a, r) => a + Number(r.c), 0);
+    const conversao = totalLeads ? (ganhos / totalLeads) * 100 : 0;
 
     // por vendedor (com ticket médio + meta individual se houver)
     const profiles = profilesRes.data ?? [];
@@ -211,18 +211,22 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
       .map((p: any) => {
         const vendas = salesMonth.filter((s) => s.profile_id === p.id);
         const receita = sum(vendas);
-        const leadsV = leads.filter((l) => l.profile_id === p.id);
-        const ganhosV = leadsV.filter((l) => l.status === "ganho").length;
+        const leadsV = leadsAgg.filter((l) => l.profile_id === p.id);
+        const totalLeadsV = leadsV.reduce((a, r) => a + Number(r.c), 0);
+        const ganhosV = leadsV
+          .filter((l) => l.status === "ganho")
+          .reduce((a, r) => a + Number(r.c), 0);
         return {
           id: p.id,
           nome: p.full_name,
           receita,
           vendas: vendas.length,
           ticketMedio: vendas.length ? receita / vendas.length : 0,
-          conversao: leadsV.length ? (ganhosV / leadsV.length) * 100 : 0,
+          conversao: totalLeadsV ? (ganhosV / totalLeadsV) * 100 : 0,
         };
       })
       .sort((a, b) => b.receita - a.receita);
+
 
     // por produto
     const prodMap = new Map<string, number>();

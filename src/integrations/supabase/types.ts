@@ -1315,6 +1315,14 @@ export type Database = {
       }
     }
     Functions: {
+      dashboard_leads_summary: {
+        Args: { p_start: string }
+        Returns: {
+          c: number
+          profile_id: string
+          status: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
