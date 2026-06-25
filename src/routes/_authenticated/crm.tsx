@@ -286,6 +286,10 @@ function CrmPage() {
                     </TableHead>
                   ))}
                   <TableHead className="text-right font-semibold">Total</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Meta €</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">% atingida</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Contratos</TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>
