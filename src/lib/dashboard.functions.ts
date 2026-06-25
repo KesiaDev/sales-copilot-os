@@ -126,6 +126,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
 
     const [
       salesMonth,
+      salesMonthRanked,
       salesToday,
       salesYest,
       goalsRes,
@@ -145,7 +146,25 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         vendido_em: string;
         produto: string;
       }>(salesQuery("id, valor, profile_id, vendido_em, produto", ["vendido_em", startMonth])),
+      fetchAllRows<{
+        id: string;
+        valor: number;
+        profile_id: string | null;
+        vendido_em: string;
+        produto: string;
+      }>(
+        ({ from, to }) =>
+          supabase
+            .from("sales")
+            .select("id, valor, profile_id, vendido_em, produto")
+            .eq("possible_duplicate", false)
+            .gte("vendido_em", startMonth)
+            .lte("vendido_em", endNow)
+            .in("fonte", ["clint", "hotmart"])
+            .range(from, to) as any,
+      ),
       fetchAllRows<{ valor: number }>(salesQuery("valor", ["vendido_em", startToday])),
+
       fetchAllRows<{ valor: number }>(
         salesQuery("valor", ["vendido_em", startYesterday], ["vendido_em", startToday]),
       ),
