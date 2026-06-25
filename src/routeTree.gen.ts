@@ -26,6 +26,7 @@ import { Route as AuthenticatedDailyRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
 import { Route as AuthenticatedComissionamentoRouteImport } from './routes/_authenticated/comissionamento'
+import { Route as ApiPublicWebhooksRefundsRouteImport } from './routes/api/public/webhooks/refunds'
 import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
 import { Route as ApiPublicWebhooksClintDashboardsRouteImport } from './routes/api/public/webhooks/clint-dashboards'
 import { Route as ApiPublicWebhooksClintRouteImport } from './routes/api/public/webhooks/clint'
@@ -117,6 +118,12 @@ const AuthenticatedComissionamentoRoute =
     path: '/comissionamento',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicWebhooksRefundsRoute =
+  ApiPublicWebhooksRefundsRouteImport.update({
+    id: '/api/public/webhooks/refunds',
+    path: '/api/public/webhooks/refunds',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksHotmartRoute =
   ApiPublicWebhooksHotmartRouteImport.update({
     id: '/api/public/webhooks/hotmart',
@@ -161,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/clint-dashboards': typeof ApiPublicWebhooksClintDashboardsRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
+  '/api/public/webhooks/refunds': typeof ApiPublicWebhooksRefundsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -183,6 +191,7 @@ export interface FileRoutesByTo {
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/clint-dashboards': typeof ApiPublicWebhooksClintDashboardsRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
+  '/api/public/webhooks/refunds': typeof ApiPublicWebhooksRefundsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -207,6 +216,7 @@ export interface FileRoutesById {
   '/api/public/webhooks/clint': typeof ApiPublicWebhooksClintRoute
   '/api/public/webhooks/clint-dashboards': typeof ApiPublicWebhooksClintDashboardsRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
+  '/api/public/webhooks/refunds': typeof ApiPublicWebhooksRefundsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/clint-dashboards'
     | '/api/public/webhooks/hotmart'
+    | '/api/public/webhooks/refunds'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/clint-dashboards'
     | '/api/public/webhooks/hotmart'
+    | '/api/public/webhooks/refunds'
   id:
     | '__root__'
     | '/'
@@ -276,6 +288,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/clint'
     | '/api/public/webhooks/clint-dashboards'
     | '/api/public/webhooks/hotmart'
+    | '/api/public/webhooks/refunds'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -286,6 +299,7 @@ export interface RootRouteChildren {
   ApiPublicWebhooksClintRoute: typeof ApiPublicWebhooksClintRoute
   ApiPublicWebhooksClintDashboardsRoute: typeof ApiPublicWebhooksClintDashboardsRoute
   ApiPublicWebhooksHotmartRoute: typeof ApiPublicWebhooksHotmartRoute
+  ApiPublicWebhooksRefundsRoute: typeof ApiPublicWebhooksRefundsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -409,6 +423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedComissionamentoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/webhooks/refunds': {
+      id: '/api/public/webhooks/refunds'
+      path: '/api/public/webhooks/refunds'
+      fullPath: '/api/public/webhooks/refunds'
+      preLoaderRoute: typeof ApiPublicWebhooksRefundsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/hotmart': {
       id: '/api/public/webhooks/hotmart'
       path: '/api/public/webhooks/hotmart'
@@ -485,6 +506,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebhooksClintRoute: ApiPublicWebhooksClintRoute,
   ApiPublicWebhooksClintDashboardsRoute: ApiPublicWebhooksClintDashboardsRoute,
   ApiPublicWebhooksHotmartRoute: ApiPublicWebhooksHotmartRoute,
+  ApiPublicWebhooksRefundsRoute: ApiPublicWebhooksRefundsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
