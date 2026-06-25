@@ -395,6 +395,92 @@ function DashboardPage() {
           />
         </div>
 
+        {/* KPIs Hotmart: reembolsos / cancelamentos / churn (mês atual via webhook) */}
+        {refundsKpi && (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <Card className="border-rose-500/30 bg-rose-500/5">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardDescription className="text-xs font-medium uppercase tracking-wider">
+                    Reembolsos (Hotmart)
+                  </CardDescription>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/15 text-rose-500">
+                    <TrendingDown className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tracking-tight text-rose-500 tabular-nums">
+                  −{formatCurrency(refundsKpi.reembolsoValor)}
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {refundsKpi.reembolsoCount}{" "}
+                    {refundsKpi.reembolsoCount === 1 ? "reembolso" : "reembolsos"}
+                  </p>
+                  <Badge variant="outline" className="border-rose-500/40 text-[10px] text-rose-500">
+                    {formatPercent(refundsKpi.percentDoBruto)} do bruto
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardDescription className="text-xs font-medium uppercase tracking-wider">
+                    Cancelamentos
+                  </CardDescription>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500">
+                    <XCircle className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tracking-tight text-amber-500 tabular-nums">
+                  {refundsKpi.cancelamentoCount}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  chargeback: {refundsKpi.chargebackCount}
+                </p>
+              </CardContent>
+            </Card>
+
+            {(() => {
+              const churn = refundsKpi.churnRate;
+              const churnTone =
+                churn > 5
+                  ? { card: "border-rose-500/30 bg-rose-500/5", text: "text-rose-500", chip: "bg-rose-500/15 text-rose-500" }
+                  : churn >= 2
+                    ? { card: "border-amber-500/30 bg-amber-500/5", text: "text-amber-500", chip: "bg-amber-500/15 text-amber-500" }
+                    : { card: "border-emerald-500/30 bg-emerald-500/5", text: "text-emerald-500", chip: "bg-emerald-500/15 text-emerald-500" };
+              return (
+                <Card className={churnTone.card}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardDescription className="text-xs font-medium uppercase tracking-wider">
+                        Taxa de Churn
+                      </CardDescription>
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${churnTone.chip}`}>
+                        <Percent className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-2xl font-bold tracking-tight tabular-nums ${churnTone.text}`}>
+                      {churn.toFixed(1).replace(".", ",")}%
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {refundsKpi.cancelamentoCount} canc / {refundsKpi.clientesAtivos} clientes ativos
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })()}
+          </div>
+        )}
+
+
         {/* Meta do dia */}
         <Card className="border-border/60">
           <CardHeader className="pb-3">
