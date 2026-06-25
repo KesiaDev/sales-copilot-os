@@ -50,7 +50,26 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
             return Response.json({ ok: true, skipped: "out_of_scope_product" });
           }
 
-          const produto_grupo = productName ? classifyHotmartProduct(productName) : null;
+          const produto_grupo: string | null =
+            (typeof payload?.mapped_produto_grupo === "string" && payload.mapped_produto_grupo) ||
+            (productName ? classifyHotmartProduct(productName) : null);
+
+          // Match best-effort do vendedor enviado pelo n8n ("mapped_seller") com profiles.name.
+          const mappedSeller: string | null =
+            typeof payload?.mapped_seller === "string" && payload.mapped_seller.trim()
+              ? payload.mapped_seller.trim()
+              : null;
+          let profileId: string | null = null;
+          if (mappedSeller) {
+            const firstName = mappedSeller.split(/\s+/)[0] ?? mappedSeller;
+            const { data: profileMatch } = await supabaseAdmin
+              .from("profiles")
+              .select("id")
+              .ilike("name", `${firstName}%`)
+              .limit(1)
+              .maybeSingle();
+            profileId = profileMatch?.id ?? null;
+          }
 
           if (event === "PURCHASE_APPROVED" || event === "PURCHASE_COMPLETE") {
             const externalSource = "hotmart_webhook";
@@ -79,6 +98,7 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
               await supabaseAdmin.from("sales").insert({
                 produto: productName || "Hotmart Product",
                 produto_grupo,
+                profile_id: profileId,
                 valor,
                 pais,
                 fonte: "hotmart",

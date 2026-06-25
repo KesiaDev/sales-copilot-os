@@ -34,12 +34,15 @@ export function isOutOfScopeProduct(nomeProduto: string): boolean {
 // as palavras-chave abaixo tambem vem sem espaco/acento para bater certo.
 export function classifyHotmartProduct(nomeProduto: string): string | null {
   const n = normalize(nomeProduto);
-  if (n.includes("renovacao")) return "Renovações";
-  if (n.includes("mentoriagestor") && n.includes("trafego")) return "Mentoria Gestor de Tráfego";
-  if (n.includes("formacao") && n.includes("redessociais"))
+  if (n.includes("renovacao") || n.includes("renewal") || n.includes("sucesso"))
+    return "Renovações";
+  if ((n.includes("mentoria") || n.includes("gestor")) && (n.includes("trafego") || n.includes("gt")))
+    return "Mentoria Gestor de Tráfego";
+  if ((n.includes("formacao") || n.includes("gestao")) && n.includes("redessociais"))
     return "Mentoria Gestão de Redes Sociais";
-  if (n.includes("masterandscale")) return "Master and Scale";
-  if (n.includes("accelerator")) return "Programa Accelerator";
-  if (n.includes("trafficmaster")) return "Traffic Master";
+  if (n.includes("masterandscale") || n.includes("master&scale")) return "Master and Scale";
+  if (n.includes("trafficmaster") || n.includes("traficmaster")) return "Traffic Master";
+  if (n.includes("accelerator")) return "Accelerator";
+  if (n.includes("estrategista")) return "Estrategista de Infoprodutos";
   return null;
 }
