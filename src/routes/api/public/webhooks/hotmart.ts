@@ -71,14 +71,53 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
             profileId = profileMatch?.id ?? null;
           }
 
-          if (event === "PURCHASE_APPROVED" || event === "PURCHASE_COMPLETE") {
+          // ---- Status canonical mapping (Hotmart -> Clint) ----
+          // Confirmado em 26/06/2026: trataremos cada evento numa unica categoria.
+          // Eventos *_REQUESTED nao mudam estado financeiro (so abrem ticket) — ignorados.
+          const SALE_EVENTS = new Set([
+            "PURCHASE_APPROVED",
+            "PURCHASE_COMPLETE",
+            "PURCHASE_BILLET_PAID",
+            "BILLET_PAID",
+            "PURCHASE_OVERDUE_PAID",
+            "OVERDUE_PAID",
+          ]);
+          const REFUND_EVENTS = new Set(["PURCHASE_REFUNDED", "REFUNDED"]);
+          const CHARGEBACK_EVENTS = new Set([
+            "PURCHASE_CHARGEBACK",
+            "CHARGEBACK",
+            "PURCHASE_PROTEST",
+          ]);
+          const CANCEL_EVENTS = new Set([
+            "PURCHASE_CANCELED",
+            "PURCHASE_CANCELLED",
+            "PURCHASE_EXPIRED",
+            "PURCHASE_BILLET_EXPIRED",
+            "ADMIN_CANCELED",
+          ]);
+
+          // Data do evento (data_de_confirmacao p/ vendas, data_de_estorno p/ perdas)
+          // Hotmart envia timestamps em ms epoch. Fallback: creation_date do payload, depois now().
+          const parseHotmartDate = (v: any): string | null => {
+            if (!v) return null;
+            const n = typeof v === "number" ? v : Number(v);
+            if (Number.isFinite(n) && n > 0) return new Date(n).toISOString();
+            const d = new Date(v);
+            return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+          };
+          const eventDate =
+            parseHotmartDate(purchase?.approved_date) ||
+            parseHotmartDate(purchase?.order_date) ||
+            parseHotmartDate(purchase?.date_next_charge) ||
+            parseHotmartDate(payload?.creation_date) ||
+            new Date().toISOString();
+
+          const valor = Number(purchase?.price?.value ?? 0);
+          const moeda = purchase?.price?.currency_value ?? purchase?.price?.currency ?? "EUR";
+
+          if (SALE_EVENTS.has(event)) {
             const externalSource = "hotmart_webhook";
             const compradorEmail: string | null = buyer?.email ?? null;
-            const valor = Number(purchase?.price?.value ?? 0);
-            const vendidoEm = purchase?.approved_date
-              ? new Date(purchase.approved_date).toISOString()
-              : new Date().toISOString();
-
             const { data: existing } = transaction
               ? await supabaseAdmin
                   .from("sales")
@@ -87,11 +126,10 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
                   .eq("external_source", externalSource)
                   .maybeSingle()
               : { data: null };
-
             if (!existing) {
               const duplicate = await findPossibleDuplicateSale(supabaseAdmin, {
                 valor,
-                vendidoEm,
+                vendidoEm: eventDate,
                 excludeExternalSource: externalSource,
                 compradorEmail,
               });
@@ -104,7 +142,7 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
                 fonte: "hotmart",
                 external_id: transaction || null,
                 external_source: externalSource,
-                vendido_em: vendidoEm,
+                vendido_em: eventDate,
                 comprador_email: compradorEmail,
                 metadata: payload,
                 possible_duplicate: !!duplicate,
@@ -112,39 +150,55 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
                 duplicate_reason: duplicate ? buildDuplicateReason(duplicate) : null,
               });
             }
-          } else if (event === "PURCHASE_REFUNDED") {
-            await supabaseAdmin.from("refunds").insert({
-              valor: Number(purchase?.price?.value ?? 0),
-              produto: productName || null,
-              produto_grupo,
-              pais,
-              motivo: `Hotmart refund - transacao ${transaction}${buyerInfo}`,
-              ocorreu_em: new Date().toISOString(),
-              metadata: payload,
-            });
-          } else if (event === "PURCHASE_CANCELED") {
-            await supabaseAdmin.from("cancellations").insert({
-              valor: Number(purchase?.price?.value ?? 0),
-              produto: productName || null,
-              produto_grupo,
-              pais,
-              motivo: `Hotmart cancellation - transacao ${transaction}${buyerInfo}`,
-              ocorreu_em: new Date().toISOString(),
-              metadata: payload,
-            });
-          } else if (event === "PURCHASE_CHARGEBACK" || event === "CHARGEBACK") {
-            await supabaseAdmin.from("refunds").insert({
-              valor: Number(purchase?.price?.value ?? 0),
-              produto: productName || null,
-              produto_grupo,
-              pais,
-              motivo: `Hotmart chargeback - transacao ${transaction}${buyerInfo}`,
-              ocorreu_em: new Date().toISOString(),
-              metadata: payload,
-            });
+          } else if (REFUND_EVENTS.has(event) || CHARGEBACK_EVENTS.has(event)) {
+            // refunds compartilha tabela com chargebacks (campo tipo distingue).
+            const tipo = CHARGEBACK_EVENTS.has(event) ? "CHARGEBACK" : "REEMBOLSO";
+            const externalSource = `hotmart_webhook_${tipo.toLowerCase()}`;
+            // Idempotencia via UNIQUE INDEX em (external_id, external_source) — upsert seguro.
+            await supabaseAdmin.from("refunds").upsert(
+              {
+                valor,
+                produto: productName || null,
+                produto_grupo,
+                pais,
+                motivo: `Hotmart ${tipo.toLowerCase()} - ${event} - transacao ${transaction}${buyerInfo}`,
+                ocorreu_em: eventDate,
+                data_evento: eventDate,
+                hotmart_transaction: transaction || null,
+                external_id: transaction || null,
+                external_source: externalSource,
+                email: buyer?.email ?? null,
+                produto_nome: productName || null,
+                moeda,
+                tipo,
+                metadata: payload,
+              },
+              { onConflict: "external_id,external_source", ignoreDuplicates: false },
+            );
+          } else if (CANCEL_EVENTS.has(event)) {
+            const externalSource = "hotmart_webhook_cancel";
+            await supabaseAdmin.from("cancellations").upsert(
+              {
+                valor,
+                produto: productName || null,
+                produto_grupo,
+                pais,
+                motivo: `Hotmart cancellation - ${event} - transacao ${transaction}${buyerInfo}`,
+                ocorreu_em: eventDate,
+                external_id: transaction || null,
+                external_source: externalSource,
+                metadata: payload,
+              },
+              { onConflict: "external_id,external_source", ignoreDuplicates: false },
+            );
+          } else {
+            // PURCHASE_DELAYED, PURCHASE_OUT_OF_SHOPPING_CART, *_REQUESTED, PURCHASE_PRINT_BILLET, etc.
+            // Sao eventos de ciclo de vida que nao alteram metrica financeira — apenas logamos.
+            console.log("hotmart webhook ignored event", { event, transaction });
+            return Response.json({ ok: true, skipped: "non_financial_event", event });
           }
 
-          return Response.json({ ok: true });
+          return Response.json({ ok: true, event });
         } catch (e: any) {
           console.error("hotmart webhook", e);
           return new Response(JSON.stringify({ error: e.message }), { status: 500 });
@@ -153,3 +207,4 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
     },
   },
 });
+
