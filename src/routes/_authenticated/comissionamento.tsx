@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Topbar } from "@/components/topbar";
 import { useFormatCurrency } from "@/components/currency-provider";
+import { todayISO } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -284,7 +285,7 @@ function ManuaisTab({ month }: { month: string }) {
     profile_id: "",
     produto_grupo: PRODUTOS[0] as string,
     valor: "",
-    data_venda: new Date().toISOString().slice(0, 10),
+    data_venda: todayISO(),
     motivo: "",
     mes_referencia: month,
   });
@@ -893,7 +894,8 @@ function RelatorioTab({ month }: { month: string }) {
 
   const [y, m] = month.split("-").map(Number);
   const startDate = `${month}-01`;
-  const endDate = new Date(y, m, 1).toISOString().slice(0, 10); // first of next month
+  const proximoMes = new Date(y, m, 1); // primeiro dia do mes seguinte
+  const endDate = `${proximoMes.getFullYear()}-${String(proximoMes.getMonth() + 1).padStart(2, "0")}-${String(proximoMes.getDate()).padStart(2, "0")}`;
 
   async function loadAll() {
     const [pr, rt, sl, mn, sp, bn, mg] = await Promise.all([

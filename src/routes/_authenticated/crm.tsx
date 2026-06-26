@@ -37,19 +37,27 @@ function inicioDoAno() {
   return `${new Date().getFullYear()}-01-01`;
 }
 
+function mesAtualRef() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 function CrmPage() {
   const fmt = useFormatCurrency();
   const [dataInicio, setDataInicio] = useState(inicioDoAno());
   const [dataFim, setDataFim] = useState(todayISO());
   const [mes, setMes] = useState("");
-  const [mesRefundsRef, setMesRefundsRef] = useState(new Date().toISOString().slice(0, 7));
+  const [mesRefundsRef, setMesRefundsRef] = useState(mesAtualRef());
 
   function aplicarMes(valor: string) {
     setMes(valor);
     if (!valor) return;
     const [y, m] = valor.split("-").map(Number);
     setDataInicio(`${valor}-01`);
-    setDataFim(new Date(y, m, 0).toISOString().slice(0, 10));
+    const ultimoDia = new Date(y, m, 0);
+    setDataFim(
+      `${ultimoDia.getFullYear()}-${String(ultimoDia.getMonth() + 1).padStart(2, "0")}-${String(ultimoDia.getDate()).padStart(2, "0")}`,
+    );
   }
 
   function aplicarPreset(inicio: string, fim: string) {
@@ -90,7 +98,7 @@ function CrmPage() {
     return acc;
   }, {});
 
-  const mesAtual = new Date().toISOString().slice(0, 7);
+  const mesAtual = mesAtualRef();
 
   const { data: metasProdutos } = useQuery({
     queryKey: ["metas-produtos", mesAtual],

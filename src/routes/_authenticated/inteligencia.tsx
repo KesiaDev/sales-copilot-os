@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { generateIntelligence, listInsights } from "@/lib/ai.functions";
+import { todayISO } from "@/lib/format";
 import { Sparkles, AlertTriangle, AlertCircle, Award } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,7 +27,7 @@ function IntelPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const todays = (insights ?? []).filter((i: any) => i.data === today);
 
   return (
