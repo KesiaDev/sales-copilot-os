@@ -32,17 +32,25 @@ export function isOutOfScopeProduct(nomeProduto: string): boolean {
 
 // normalize() (de hotmart-csv.ts) remove tudo que nao for letra/numero, entao
 // as palavras-chave abaixo tambem vem sem espaco/acento para bater certo.
+// Subtipos confirmados com a Kesia em 26/06/2026: renovacao precisa ser
+// quebrada em mentoria/TM/accelerator para o comissionamento bater certo.
 export function classifyHotmartProduct(nomeProduto: string): string | null {
   const n = normalize(nomeProduto);
-  if (n.includes("renovacao") || n.includes("renewal") || n.includes("sucesso"))
-    return "Renovações";
+  const isRenewal = n.includes("renovacao") || n.includes("renewal") || n.includes("sucesso");
+  if (isRenewal) {
+    if (n.includes("trafficmaster") || n.includes("traficmaster") || /\btm\b/.test(nomeProduto.toLowerCase()))
+      return "Renovação TM";
+    if (n.includes("accelerator") || n.includes("acc")) return "Renovação acc";
+    return "Renovação mentoria";
+  }
   if ((n.includes("mentoria") || n.includes("gestor")) && (n.includes("trafego") || n.includes("gt")))
-    return "Mentoria Gestor de Tráfego";
+    return "Gestor de tráfego pago 2.0 - AU";
   if ((n.includes("formacao") || n.includes("gestao")) && n.includes("redessociais"))
-    return "Mentoria Gestão de Redes Sociais";
-  if (n.includes("masterandscale") || n.includes("master&scale")) return "Master and Scale";
-  if (n.includes("trafficmaster") || n.includes("traficmaster")) return "Traffic Master";
-  if (n.includes("accelerator")) return "Accelerator";
+    return "Formação gestor de redes sociais 2.0";
+  if (n.includes("masterandscale") || n.includes("master&scale") || n.includes("masterandscala"))
+    return "Master and Scale 2025";
+  if (n.includes("trafficmaster") || n.includes("traficmaster")) return "Tráfico Master";
+  if (n.includes("accelerator")) return "Programa Accelerator";
   if (n.includes("estrategista")) return "Estrategista de Infoprodutos";
   return null;
 }
