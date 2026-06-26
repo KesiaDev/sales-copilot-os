@@ -11,10 +11,23 @@ export const Route = createFileRoute("/api/public/webhooks/clint")({
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { findPossibleDuplicateSale, buildDuplicateReason } =
             await import("@/lib/duplicate-detection");
+          const { classifyHotmartProduct } = await import("@/lib/hotmart-product");
           const payload = (await request.json()) as any;
 
-          const eventType = payload?.event ?? payload?.type ?? "";
+          const eventType = String(payload?.event ?? payload?.type ?? "").toLowerCase();
           const data = payload?.data ?? payload ?? {};
+          const dealStatus = String(data?.status ?? data?.stage ?? "").toLowerCase();
+
+          // Eventos que NAO sao venda fechada — ignora silenciosamente para
+          // nao poluir a base. Clint dispara deal_created/updated em cada
+          // mudanca de etapa do funil; so deal_won/sale_won vira venda.
+          const isWonEvent =
+            eventType.includes("won") ||
+            eventType === "deal_closed" ||
+            dealStatus === "won" ||
+            dealStatus === "ganho" ||
+            dealStatus === "fechado";
+          const isDealEvent = eventType.includes("deal") || eventType.includes("sale");
 
           if (eventType.includes("lead") || eventType.includes("contact")) {
             await supabaseAdmin.from("leads").insert({
@@ -27,7 +40,10 @@ export const Route = createFileRoute("/api/public/webhooks/clint")({
               recebido_em: new Date().toISOString(),
               metadata: payload,
             });
-          } else if (eventType.includes("deal") || eventType.includes("sale")) {
+          } else if (isDealEvent && !isWonEvent) {
+            // Deal aberto/perdido/movido — registra evento mas nao cria venda.
+            return Response.json({ ok: true, skipped: "not_won", eventType, dealStatus });
+          } else if (isDealEvent && isWonEvent) {
             const externalId: string | null = data?.external_id ? String(data.external_id) : null;
             const externalSource = externalId ? "clint" : null;
 
@@ -64,10 +80,14 @@ export const Route = createFileRoute("/api/public/webhooks/clint")({
             const wonAt =
               data?.won_at && !isNaN(Date.parse(data.won_at))
                 ? new Date(data.won_at).toISOString()
-                : new Date().toISOString();
+                : data?.closed_at && !isNaN(Date.parse(data.closed_at))
+                  ? new Date(data.closed_at).toISOString()
+                  : data?.updated_at && !isNaN(Date.parse(data.updated_at))
+                    ? new Date(data.updated_at).toISOString()
+                    : new Date().toISOString();
 
             const validSources = ["hotmart", "clint", "manual", "outro"];
-            const fonte = validSources.includes(data?.source) ? data.source : "outro";
+            const fonte = validSources.includes(data?.source) ? data.source : "clint";
 
             const valor = Number(data?.value ?? data?.amount ?? 0);
             if (!valor || valor <= 0) {
@@ -82,10 +102,13 @@ export const Route = createFileRoute("/api/public/webhooks/clint")({
             const compradorTelefone: string | null = data?.contact_phone
               ? String(data.contact_phone).trim()
               : null;
+            const produto = data?.title ?? data?.product ?? data?.deal_name ?? "Clint Deal";
+            const produtoGrupo =
+              data?.produto_grupo ?? classifyHotmartProduct(String(produto)) ?? null;
             const row = {
               profile_id: profileId,
-              produto: data?.title ?? data?.product ?? data?.deal_name ?? "Clint Deal",
-              produto_grupo: data?.produto_grupo ?? null,
+              produto,
+              produto_grupo: produtoGrupo,
               valor,
               moeda: data?.currency ?? "EUR",
               pais: data?.country,
