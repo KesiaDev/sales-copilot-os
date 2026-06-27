@@ -266,6 +266,9 @@ function CrmPage() {
                     <TableCell className="text-right text-xs font-semibold">
                       {v.totalVendas} · {fmt(v.totalValor)}
                     </TableCell>
+                    <TableCell className="text-right text-xs">
+                      {(v as any).conversao != null ? formatPercent((v as any).conversao) : "—"}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
