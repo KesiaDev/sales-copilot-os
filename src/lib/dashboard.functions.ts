@@ -261,7 +261,9 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     const ganhos = leadsAgg
       .filter((l) => l.status === "ganho")
       .reduce((a, r) => a + Number(r.c), 0);
-    const conversao = totalLeads ? (ganhos / totalLeads) * 100 : 0;
+    const conversaoLeads = totalLeads ? (ganhos / totalLeads) * 100 : 0;
+    const conversao = conversaoGlobalClint ?? conversaoLeads;
+
 
     // por vendedor (com ticket médio + meta individual se houver)
     const profiles = profilesRes.data ?? [];
