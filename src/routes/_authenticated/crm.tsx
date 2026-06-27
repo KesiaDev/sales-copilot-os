@@ -248,6 +248,7 @@ function CrmPage() {
                     </TableHead>
                   ))}
                   <TableHead className="text-right font-semibold">Total</TableHead>
+                  <TableHead className="text-right">Conversão</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
