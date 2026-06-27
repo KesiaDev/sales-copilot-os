@@ -282,7 +282,9 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
           receita,
           vendas: vendas.length,
           ticketMedio: vendas.length ? receita / vendas.length : 0,
-          conversao: totalLeadsV ? (ganhosV / totalLeadsV) * 100 : 0,
+          conversao:
+            clintConvMap.get(p.id) ?? (totalLeadsV ? (ganhosV / totalLeadsV) * 100 : 0),
+
         };
       })
       .sort((a, b) => b.receita - a.receita);
