@@ -214,12 +214,52 @@ export const getVendasPorProduto = createServerFn({ method: "GET" })
       vendedor.totalValor += Number(r.valor) || 0;
     }
 
+    // Conversao por vendedor vem do snapshot mais recente do dashboard Clint
+    // (a tabela `leads` interna esta vazia). Mapeamos por nome do vendedor.
+    const latestSnap = await context.supabase
+      .from("clint_vendedor_metricas")
+      .select("capturado_em")
+      .order("capturado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const convByProfileId = new Map<string, number>();
+    if (latestSnap.data?.capturado_em) {
+      const metricsRes = await context.supabase
+        .from("clint_vendedor_metricas")
+        .select("profile_id, negocios_ganhos, negocios_total, taxa_conversao")
+        .eq("capturado_em", latestSnap.data.capturado_em);
+      for (const m of (metricsRes.data ?? []) as any[]) {
+        if (!m.profile_id) continue;
+        const ganhos = Number(m.negocios_ganhos ?? 0);
+        const total = Number(m.negocios_total ?? 0);
+        const taxa =
+          m.taxa_conversao != null
+            ? Number(m.taxa_conversao)
+            : total > 0
+              ? (ganhos / total) * 100
+              : 0;
+        convByProfileId.set(m.profile_id, taxa);
+      }
+    }
+    const convByNome = new Map<string, number>();
+    for (const r of rows) {
+      const nome = r.profiles?.full_name ?? "Sem vendedor";
+      if (r.profile_id && convByProfileId.has(r.profile_id) && !convByNome.has(nome)) {
+        convByNome.set(nome, convByProfileId.get(r.profile_id)!);
+      }
+    }
+
     const vendedores = [...porVendedor.values()]
-      .map((v) => ({ ...v, produtos: Object.fromEntries(v.produtos) }))
+      .map((v) => ({
+        ...v,
+        produtos: Object.fromEntries(v.produtos),
+        conversao: convByNome.get(v.nome) ?? 0,
+      }))
       .sort((a, b) => b.totalValor - a.totalValor);
 
     return { produtos: [...produtos].sort(), vendedores };
   });
+
 
 export const getVendasMensaisPorProduto = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

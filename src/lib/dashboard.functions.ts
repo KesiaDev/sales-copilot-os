@@ -199,6 +199,42 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
       supabase.from("metas_mensais").select("mes_ano, meta_geral_eur"),
     ]);
 
+    // Conversao real vem do snapshot mais recente do dashboard Clint (a tabela
+    // `leads` interna esta vazia, entao o calculo antigo dava sempre 0%).
+    const latestSnapshotRes = await supabase
+      .from("clint_vendedor_metricas")
+      .select("capturado_em")
+      .order("capturado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const latestCapturadoEm = latestSnapshotRes.data?.capturado_em ?? null;
+    const clintMetricsRes = latestCapturadoEm
+      ? await supabase
+          .from("clint_vendedor_metricas")
+          .select("profile_id, negocios_ganhos, negocios_total, taxa_conversao")
+          .eq("capturado_em", latestCapturadoEm)
+      : { data: [] as any[] };
+    const clintConvMap = new Map<string, number>();
+    let totalGanhos = 0;
+    let totalNegocios = 0;
+    for (const m of (clintMetricsRes.data ?? []) as any[]) {
+      const ganhos = Number(m.negocios_ganhos ?? 0);
+      const total = Number(m.negocios_total ?? 0);
+      totalGanhos += ganhos;
+      totalNegocios += total;
+      if (!m.profile_id) continue;
+      const taxa =
+        m.taxa_conversao != null
+          ? Number(m.taxa_conversao)
+          : total > 0
+            ? (ganhos / total) * 100
+            : 0;
+      clintConvMap.set(m.profile_id, taxa);
+    }
+    const conversaoGlobalClint = totalNegocios > 0 ? (totalGanhos / totalNegocios) * 100 : null;
+
+
+
 
     const sum = (arr: any[] | null, k = "valor") =>
       (arr ?? []).reduce((a, r) => a + Number(r[k] ?? 0), 0);
@@ -225,7 +261,9 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     const ganhos = leadsAgg
       .filter((l) => l.status === "ganho")
       .reduce((a, r) => a + Number(r.c), 0);
-    const conversao = totalLeads ? (ganhos / totalLeads) * 100 : 0;
+    const conversaoLeads = totalLeads ? (ganhos / totalLeads) * 100 : 0;
+    const conversao = conversaoGlobalClint ?? conversaoLeads;
+
 
     // por vendedor (com ticket médio + meta individual se houver)
     const profiles = profilesRes.data ?? [];
@@ -244,7 +282,9 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
           receita,
           vendas: vendas.length,
           ticketMedio: vendas.length ? receita / vendas.length : 0,
-          conversao: totalLeadsV ? (ganhosV / totalLeadsV) * 100 : 0,
+          conversao:
+            clintConvMap.get(p.id) ?? (totalLeadsV ? (ganhosV / totalLeadsV) * 100 : 0),
+
         };
       })
       .sort((a, b) => b.receita - a.receita);

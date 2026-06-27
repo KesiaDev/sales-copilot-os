@@ -248,6 +248,7 @@ function CrmPage() {
                     </TableHead>
                   ))}
                   <TableHead className="text-right font-semibold">Total</TableHead>
+                  <TableHead className="text-right">Conversão</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -264,6 +265,9 @@ function CrmPage() {
                     })}
                     <TableCell className="text-right text-xs font-semibold">
                       {v.totalVendas} · {fmt(v.totalValor)}
+                    </TableCell>
+                    <TableCell className="text-right text-xs">
+                      {(v as any).conversao != null ? formatPercent((v as any).conversao) : "—"}
                     </TableCell>
                   </TableRow>
                 ))}
