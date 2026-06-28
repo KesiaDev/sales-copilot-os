@@ -141,6 +141,12 @@ export const Route = createFileRoute("/api/public/webhooks/clint-dashboards")({
                 r.taxa_conversao =
                   row.deal_conversion_rate != null ? Number(row.deal_conversion_rate) : null;
               }
+            } else if (name === "Vendas por Vendedor" && chart.type === "table") {
+              for (const row of chart.result?.rows ?? []) {
+                const r = getRow(row.user_won_name ?? "");
+                if (!r) continue;
+                setNum(r, "negocios_ganhos", Number(row.deal_count_won ?? 0));
+              }
             } else if (chart.type === "funnel") {
               funilInserts.push({
                 tipo: "funil_conversao",
