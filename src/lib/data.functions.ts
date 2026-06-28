@@ -382,7 +382,7 @@ export const listPossibleDuplicates = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("sales")
       .select(
-        "*, profile:profiles(full_name), original:sales!sales_duplicate_of_fkey(id, produto, valor, vendido_em, fonte)",
+        "*, profile:profiles(full_name), original:sales!duplicate_of(id, produto, valor, vendido_em, fonte)",
       )
       .eq("possible_duplicate", true)
       .order("vendido_em", { ascending: false });
