@@ -415,3 +415,65 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
       topDia: porVendedor[0] ?? null,
     };
   });
+
+type DestaqueVendedor = {
+  nome: string;
+  avatarUrl: string | null;
+  receita: number;
+  vendas: number;
+} | null;
+
+export const getDestaques = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startYesterday = new Date(startToday.getTime() - 86_400_000);
+    const startWeek = new Date(startToday.getTime() - 6 * 86_400_000);
+    const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const buildQuery =
+      (gte: string, lt?: string) =>
+      ({ from, to }: { from: number; to: number }): PromiseLike<{
+        data: { valor: number; profile_id: string | null; profiles: { full_name: string; avatar_url: string | null } | null }[] | null;
+        error: unknown;
+      }> => {
+        let q = supabase
+          .from("sales")
+          .select("valor, profile_id, profiles(full_name, avatar_url)")
+          .eq("possible_duplicate", false)
+          .gte("vendido_em", gte)
+          .range(from, to);
+        if (lt) q = (q as any).lt("vendido_em", lt);
+        return q as any;
+      };
+
+    const [salesYest, salesWeek, salesMonth] = await Promise.all([
+      fetchAllRows(buildQuery(startYesterday.toISOString(), startToday.toISOString())),
+      fetchAllRows(buildQuery(startWeek.toISOString())),
+      fetchAllRows(buildQuery(startMonth.toISOString())),
+    ]);
+
+    function topVendedor(rows: typeof salesYest): DestaqueVendedor {
+      const byV = new Map<string, { nome: string; avatarUrl: string | null; receita: number; vendas: number }>();
+      for (const r of rows) {
+        if (!r.profile_id) continue;
+        const profile = r.profiles;
+        const nome = profile?.full_name ?? "?";
+        const cur = byV.get(r.profile_id) ?? { nome, avatarUrl: profile?.avatar_url ?? null, receita: 0, vendas: 0 };
+        cur.receita += Number(r.valor ?? 0);
+        cur.vendas += 1;
+        byV.set(r.profile_id, cur);
+      }
+      let top: DestaqueVendedor = null;
+      byV.forEach((v) => { if (!top || v.receita > top.receita) top = v; });
+      return top;
+    }
+
+    return {
+      dia: topVendedor(salesYest),
+      semana: topVendedor(salesWeek),
+      mes: topVendedor(salesMonth),
+    };
+  });
