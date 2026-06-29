@@ -133,6 +133,65 @@ export type Database = {
           },
         ]
       }
+      bi_channels: {
+        Row: {
+          clint_group_names: string[]
+          id: string
+          label: string
+          sck_prefixes: string[]
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          clint_group_names?: string[]
+          id: string
+          label: string
+          sck_prefixes?: string[]
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          clint_group_names?: string[]
+          id?: string
+          label?: string
+          sck_prefixes?: string[]
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bi_product_config: {
+        Row: {
+          categoria: string
+          label: string
+          product_id: string
+          produto_pai_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string
+          label: string
+          product_id: string
+          produto_pai_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string
+          label?: string
+          product_id?: string
+          produto_pai_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bi_product_config_produto_pai_id_fkey"
+            columns: ["produto_pai_id"]
+            isOneToOne: false
+            referencedRelation: "bi_product_config"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       cancellations: {
         Row: {
           created_at: string
